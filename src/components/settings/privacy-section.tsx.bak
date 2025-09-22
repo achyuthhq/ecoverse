@@ -1,0 +1,223 @@
+"use client";
+
+import { useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { 
+  Shield, 
+  Eye, 
+  History, 
+  UserCircle, 
+  Download, 
+  Trash2, 
+  CheckCircle2,
+  AlertTriangle
+} from "lucide-react";
+
+export default function PrivacySection() {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [settings, setSettings] = useState({
+    publicProfile: true,
+    shareHistory: false,
+    activityStatus: true,
+  });
+
+  const handleToggle = (key: keyof typeof settings) => {
+    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    setSaveSuccess(false);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setSaveSuccess(true);
+      
+      // Reset success message after 3 seconds
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    // Here you would implement the account deletion logic
+    setShowDeleteConfirm(false);
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Privacy Settings Card */}
+      <Card className="p-6 border border-gray-100 shadow-sm rounded-xl overflow-hidden">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 rounded-full bg-indigo-100">
+            <Shield className="h-5 w-5 text-indigo-600" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-800">Privacy Settings</h3>
+        </div>
+        
+        <div className="space-y-6">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 border border-white/50">
+            <div className="space-y-0.5 flex items-center gap-3">
+              <UserCircle className="h-5 w-5 text-indigo-500" />
+              <div>
+                <Label className="text-gray-800 font-medium">Public Profile</Label>
+                <p className="text-sm text-gray-600">
+                  Make your profile visible to other community members
+                </p>
+              </div>
+            </div>
+            <Switch 
+              checked={settings.publicProfile} 
+              onCheckedChange={() => handleToggle('publicProfile')}
+              className="data-[state=checked]:bg-gradient-to-r from-green-500 to-green-400"
+            />
+          </div>
+          
+          <div className="flex items-center justify-between p-4 rounded-xl bg-white border border-gray-100">
+            <div className="space-y-0.5 flex items-center gap-3">
+              <History className="h-5 w-5 text-purple-500" />
+              <div>
+                <Label className="text-gray-800 font-medium">Share Analysis History</Label>
+                <p className="text-sm text-gray-600">
+                  Allow others to see your analysis history
+                </p>
+              </div>
+            </div>
+            <Switch 
+              checked={settings.shareHistory} 
+              onCheckedChange={() => handleToggle('shareHistory')}
+              className="data-[state=checked]:bg-gradient-to-r from-green-500 to-green-400"
+            />
+          </div>
+          
+          <div className="flex items-center justify-between p-4 rounded-xl bg-white border border-gray-100">
+            <div className="space-y-0.5 flex items-center gap-3">
+              <Eye className="h-5 w-5 text-blue-500" />
+              <div>
+                <Label className="text-gray-800 font-medium">Activity Status</Label>
+                <p className="text-sm text-gray-600">
+                  Show when you're active on the platform
+                </p>
+              </div>
+            </div>
+            <Switch 
+              checked={settings.activityStatus} 
+              onCheckedChange={() => handleToggle('activityStatus')}
+              className="data-[state=checked]:bg-gradient-to-r from-green-500 to-green-400"
+            />
+          </div>
+
+          <div className="flex justify-end">
+            <Button 
+              onClick={handleSave}
+              disabled={isSaving}
+              className="bg-gradient-to-r from-green-500 to-green-400 hover:from-green-600 hover:to-green-500 text-white px-6 py-2 rounded-lg transition-all flex items-center gap-2"
+            >
+              {isSaving ? (
+                <>
+                  <span className="animate-spin">⏳</span>
+                  <span>Saving...</span>
+                </>
+              ) : saveSuccess ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>Saved</span>
+                </>
+              ) : (
+                <span>Save Privacy Settings</span>
+              )}
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      {/* Data Management Card */}
+      <Card className="p-6 border border-gray-100 shadow-sm rounded-xl overflow-hidden">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 rounded-full bg-rose-100">
+            <Download className="h-5 w-5 text-rose-600" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-800">Data Management</h3>
+        </div>
+        
+        <div className="space-y-6">
+          <div className="p-5 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-white/50">
+            <h4 className="text-lg font-medium text-gray-800 mb-2">Download Your Data</h4>
+            <p className="text-gray-600 mb-4">
+              Get a copy of all your personal data that we store, including your profile information, 
+              analyses history, and community contributions.
+            </p>
+            <Button 
+              variant="outline" 
+              className="border-blue-200 hover:border-blue-300 hover:bg-blue-50 text-blue-600 flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Download My Data
+            </Button>
+          </div>
+          
+          {!showDeleteConfirm ? (
+            <div className="p-5 rounded-xl bg-gradient-to-br from-rose-50 to-red-50 border border-white/50">
+              <h4 className="text-lg font-medium text-gray-800 mb-2">Delete Account</h4>
+              <p className="text-gray-600 mb-4">
+                Permanently delete your account and all associated data. This action cannot be undone.
+              </p>
+              <Button 
+                variant="destructive"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="bg-rose-500 hover:bg-rose-600 flex items-center gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete Account
+              </Button>
+            </div>
+          ) : (
+            <div className="p-5 rounded-xl bg-rose-100 border border-rose-200">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className="h-5 w-5 text-rose-500" />
+                <h4 className="text-lg font-medium text-gray-800">Confirm Account Deletion</h4>
+              </div>
+              
+              <p className="text-gray-700 mb-4">
+                This action cannot be undone. This will permanently delete your account and remove your data from our servers.
+              </p>
+              
+              <div className="p-4 rounded-lg bg-rose-50 text-rose-800 text-sm mb-4">
+                <p>You will lose:</p>
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  <li>All your analyses history</li>
+                  <li>Your profile information</li>
+                  <li>Community contributions</li>
+                  <li>Access to any premium features</li>
+                </ul>
+              </div>
+              
+              <div className="flex justify-between">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteAccount}
+                  className="bg-rose-500 hover:bg-rose-600"
+                >
+                  Yes, Delete My Account
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+} 

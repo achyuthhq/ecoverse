@@ -1,0 +1,22 @@
+{
+    "name": "Ecoverse",
+    "short_name": "Ecoverse",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#3b82f6",
+    "description": "Eco-aware recycling tracker and environmental platform",
+    "icons": [
+      {
+        "src": "/images/ecoverse.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "src": "/images/ecoverse.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ]
+  }
+  

@@ -1,0 +1,173 @@
+"use client";
+
+import { Card } from "@/components/ui/card";
+import { BarChart3, LineChart, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
+
+interface UsageSectionProps {
+  analysesCount: number;
+}
+
+export default function UsageSection({ analysesCount }: UsageSectionProps) {
+  // Calculate the current month and get previous months
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
+  
+  // Sample data for previous months (in a real app, this would come from the database)
+  // We'll use this to calculate realistic growth percentages
+  const previousMonthsData = [
+    { month: "Jan", count: 45 },
+    { month: "Feb", count: 32 },
+    { month: "Mar", count: 58 },
+    { month: "Apr", count: 22 },
+    { month: "May", count: 39 },
+  ];
+  
+  // Add current month data
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const currentMonthName = monthNames[currentMonth];
+  
+  // Ensure we have 6 months of data (or fewer if we're early in the year)
+  const displayMonths = Math.min(6, currentMonth + 1);
+  const monthlyData = [];
+  
+  for (let i = displayMonths - 1; i >= 0; i--) {
+    const monthIndex = currentMonth - i;
+    const month = monthNames[monthIndex];
+    
+    // Use sample data for past months, actual count for current month
+    const count = monthIndex === currentMonth ? analysesCount : previousMonthsData[displayMonths - i - 1]?.count || 0;
+    
+    // Calculate percentage based on a goal of 60 analyses per month
+    const percentage = Math.min(Math.round((count / 60) * 100), 100);
+    
+    monthlyData.push({ month, count, percentage });
+  }
+  
+  // Calculate growth percentages based on previous month
+  const currentMonthCount = analysesCount;
+  const previousMonthCount = previousMonthsData[previousMonthsData.length - 1]?.count || 0;
+  
+  // Calculate month-over-month growth percentage
+  const monthlyGrowthPercentage = previousMonthCount > 0 
+    ? Math.round(((currentMonthCount - previousMonthCount) / previousMonthCount) * 100) 
+    : 0;
+  
+  // Calculate total growth percentage (compared to average of previous months)
+  const averagePreviousCount = previousMonthsData.reduce((sum, item) => sum + item.count, 0) / previousMonthsData.length;
+  const totalGrowthPercentage = averagePreviousCount > 0 
+    ? Math.round(((analysesCount - averagePreviousCount) / averagePreviousCount) * 100) 
+    : 0;
+
+  return (
+    <div className="space-y-8">
+      {/* Usage Overview Card */}
+      <Card className="p-6 border border-gray-100 shadow-sm rounded-xl overflow-hidden">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 rounded-full bg-blue-100">
+            <BarChart3 className="h-5 w-5 text-blue-600" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-800">Usage Overview</h3>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Total Analyses */}
+          <div className="p-4 rounded-xl bg-gradient-to-br from-green-50 to-green-100 border border-white/50">
+            <p className="text-sm font-medium text-gray-500">Total Analyses</p>
+            <div className="mt-2 flex items-baseline">
+              <span className="text-3xl font-bold text-gray-900">{analysesCount}</span>
+              <span className={`ml-2 text-sm ${totalGrowthPercentage >= 0 ? 'text-green-600' : 'text-red-600'} flex items-center`}>
+                {totalGrowthPercentage >= 0 ? (
+                  <ArrowUpRight className="h-3 w-3 mr-0.5" />
+                ) : (
+                  <ArrowDownRight className="h-3 w-3 mr-0.5" />
+                )}
+                {Math.abs(totalGrowthPercentage)}%
+              </span>
+            </div>
+          </div>
+          
+          {/* This Month */}
+          <div className="p-4 rounded-xl bg-gradient-to-br from-green-50 to-green-100 border border-white/50">
+            <p className="text-sm font-medium text-gray-500">This Month</p>
+            <div className="mt-2 flex items-baseline">
+              <span className="text-3xl font-bold text-gray-900">{currentMonthCount}</span>
+              <span className={`ml-2 text-sm ${monthlyGrowthPercentage >= 0 ? 'text-green-600' : 'text-red-600'} flex items-center`}>
+                {monthlyGrowthPercentage >= 0 ? (
+                  <ArrowUpRight className="h-3 w-3 mr-0.5" />
+                ) : (
+                  <ArrowDownRight className="h-3 w-3 mr-0.5" />
+                )}
+                {Math.abs(monthlyGrowthPercentage)}%
+              </span>
+            </div>
+          </div>
+        </div>
+      </Card>
+      
+      {/* Usage Chart */}
+      <Card className="p-6 border border-gray-100 shadow-sm rounded-xl overflow-hidden">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-full bg-green-100">
+              <LineChart className="h-5 w-5 text-green-600" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-800">Monthly Activity</h3>
+          </div>
+          
+          <Button variant="outline" size="sm" className="text-gray-500 hover:text-green-600">
+            View Details
+          </Button>
+        </div>
+        
+        {/* Enhanced bar chart visualization */}
+        <div className="relative h-64">
+          {/* Grid lines */}
+          <div className="absolute inset-0 flex flex-col justify-between border-l border-gray-100">
+            {[0, 25, 50, 75, 100].map((tick) => (
+              <div key={tick} className="w-full h-px bg-gray-100 relative">
+                <span className="absolute -left-7 -translate-y-1/2 text-xs text-gray-400 tabular-nums">
+                  {tick}%
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Bars container */}
+          <div className="absolute inset-0 flex items-end pt-6 pl-8">
+            <div className="flex-1 flex items-end gap-6 h-full">
+              {monthlyData.map((item, index) => (
+                <div key={item.month} className="flex-1 flex flex-col items-center group">
+                  <motion.div
+                    initial={{ height: 0 }}
+                    animate={{ height: `${Math.min(item.percentage, 100)}%` }}
+                    transition={{ 
+                      duration: 0.5,
+                      delay: index * 0.1,
+                      ease: [0.32, 0.72, 0, 1]
+                    }}
+                    className={`w-full max-w-[40px] mx-auto rounded-lg relative group ${
+                      index === monthlyData.length - 1
+                        ? "bg-gradient-to-b from-green-500 to-green-400"
+                        : "bg-gray-200 group-hover:bg-gray-300"
+                    }`}
+                  >
+                    {/* Tooltip */}
+                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-3 py-1.5 rounded-md text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg">
+                      <div className="font-medium">{item.count} analyses</div>
+                      <div className="text-gray-400 text-[10px]">{item.percentage}% of goal</div>
+                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 transform rotate-45 w-2 h-2 bg-gray-800"></div>
+                    </div>
+                  </motion.div>
+                  <span className="mt-3 text-xs font-medium text-gray-500">{item.month}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+} 

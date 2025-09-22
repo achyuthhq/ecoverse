@@ -1,0 +1,169 @@
+"use client";
+
+import { useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Bell, Mail, MessageSquare, Megaphone, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+export default function NotificationsSection() {
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [settings, setSettings] = useState({
+    analysisUpdates: true,
+    communityActivity: true,
+    productNews: false,
+    emailDigest: true,
+    pushNotifications: true
+  });
+
+  const handleToggle = (key: keyof typeof settings) => {
+    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    setSaveSuccess(false);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setSaveSuccess(true);
+      
+      // Reset success message after 3 seconds
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Email Notifications */}
+      <Card className="p-6 border border-gray-100 shadow-sm rounded-xl overflow-hidden">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 rounded-full bg-amber-100">
+            <Bell className="h-5 w-5 text-amber-600" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-800">Notification Preferences</h3>
+        </div>
+        
+        <div className="space-y-6">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-white/50">
+            <div className="space-y-0.5 flex items-center gap-3">
+              <Mail className="h-5 w-5 text-amber-500" />
+              <div>
+                <Label className="text-gray-800 font-medium">Analysis Updates</Label>
+                <p className="text-sm text-gray-600">
+                  Get notified when your analysis is complete
+                </p>
+              </div>
+            </div>
+            <Switch 
+              checked={settings.analysisUpdates} 
+              onCheckedChange={() => handleToggle('analysisUpdates')}
+              className="data-[state=checked]:bg-gradient-to-r from-green-500 to-green-400"
+            />
+          </div>
+          
+          <div className="flex items-center justify-between p-4 rounded-xl bg-white border border-gray-100">
+            <div className="space-y-0.5 flex items-center gap-3">
+              <MessageSquare className="h-5 w-5 text-blue-500" />
+              <div>
+                <Label className="text-gray-800 font-medium">Community Activity</Label>
+                <p className="text-sm text-gray-600">
+                  Receive updates about community events and discussions
+                </p>
+              </div>
+            </div>
+            <Switch 
+              checked={settings.communityActivity} 
+              onCheckedChange={() => handleToggle('communityActivity')}
+              className="data-[state=checked]:bg-gradient-to-r from-green-500 to-green-400"
+            />
+          </div>
+          
+          <div className="flex items-center justify-between p-4 rounded-xl bg-white border border-gray-100">
+            <div className="space-y-0.5 flex items-center gap-3">
+              <Megaphone className="h-5 w-5 text-purple-500" />
+              <div>
+                <Label className="text-gray-800 font-medium">Product News</Label>
+                <p className="text-sm text-gray-600">
+                  Stay informed about new features and improvements
+                </p>
+              </div>
+            </div>
+            <Switch 
+              checked={settings.productNews} 
+              onCheckedChange={() => handleToggle('productNews')}
+              className="data-[state=checked]:bg-gradient-to-r from-green-500 to-green-400"
+            />
+          </div>
+        </div>
+      </Card>
+
+      {/* Delivery Preferences */}
+      <Card className="p-6 border border-gray-100 shadow-sm rounded-xl overflow-hidden">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 rounded-full bg-blue-100">
+            <Mail className="h-5 w-5 text-blue-600" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-800">Delivery Methods</h3>
+        </div>
+        
+        <div className="space-y-6">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-white border border-gray-100">
+            <div>
+              <Label className="text-gray-800 font-medium">Email Digest</Label>
+              <p className="text-sm text-gray-600">
+                Receive a weekly summary of your activity
+              </p>
+            </div>
+            <Switch 
+              checked={settings.emailDigest} 
+              onCheckedChange={() => handleToggle('emailDigest')}
+              className="data-[state=checked]:bg-gradient-to-r from-green-500 to-green-400"
+            />
+          </div>
+          
+          <div className="flex items-center justify-between p-4 rounded-xl bg-white border border-gray-100">
+            <div>
+              <Label className="text-gray-800 font-medium">Push Notifications</Label>
+              <p className="text-sm text-gray-600">
+                Get real-time notifications on your device
+              </p>
+            </div>
+            <Switch 
+              checked={settings.pushNotifications} 
+              onCheckedChange={() => handleToggle('pushNotifications')}
+              className="data-[state=checked]:bg-gradient-to-r from-green-500 to-green-400"
+            />
+          </div>
+          
+          <div className="flex justify-end">
+            <Button 
+              onClick={handleSave}
+              disabled={isSaving}
+              className="bg-gradient-to-r from-green-500 to-green-400 hover:from-green-600 hover:to-green-500 text-white px-6 py-2 rounded-lg transition-all flex items-center gap-2"
+            >
+              {isSaving ? (
+                <>
+                  <span className="animate-spin">⏳</span>
+                  <span>Saving...</span>
+                </>
+              ) : saveSuccess ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>Saved</span>
+                </>
+              ) : (
+                <span>Save Preferences</span>
+              )}
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+} 

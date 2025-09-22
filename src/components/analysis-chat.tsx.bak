@@ -1,0 +1,320 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { RefreshCw, Send, User, Bot, Leaf } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
+
+interface Message {
+  role: "user" | "assistant";
+  content: string;
+}
+
+interface AnalysisChatProps {
+  analysisId: string;
+}
+
+export default function AnalysisChat({ analysisId }: AnalysisChatProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // Fetch initial analysis when component mounts
+  useEffect(() => {
+    if (messages.length === 0) {
+      fetchInitialAnalysis();
+    }
+  }, [analysisId]);
+
+  // Scroll to bottom whenever messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const fetchInitialAnalysis = async () => {
+    setInitialLoading(true);
+    setApiError(null);
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          analysisId,
+          message: "initial",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Check if the response has the expected format
+      if (!data.response) {
+        throw new Error("Invalid response format from API");
+      }
+
+      setMessages([
+        {
+          role: "assistant",
+          content: data.response,
+        },
+      ]);
+    } catch (error) {
+      console.error("Error fetching initial analysis:", error);
+      setApiError("Failed to load environmental analysis. Please try again.");
+    } finally {
+      setInitialLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || loading) return;
+
+    const userMessage = input.trim();
+    setInput("");
+    setApiError(null);
+
+    // Add user message to chat
+    setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
+
+    // Set loading state
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          analysisId,
+          message: userMessage,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Check if the response has the expected format
+      if (!data.response) {
+        throw new Error("Invalid response format from API");
+      }
+
+      // Add assistant response to chat
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: data.response },
+      ]);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setApiError("Failed to get a response. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetChat = () => {
+    setMessages([]);
+    fetchInitialAnalysis();
+  };
+
+  return (
+    <div className="flex flex-col h-full rounded-lg overflow-hidden border shadow-lg" ref={chatContainerRef}>
+      {/* Chat Header with Ecoverse logo */}
+      <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 flex justify-between items-center sticky top-0 z-10">
+        <div className="flex items-center space-x-3">
+          <div className="relative h-8 w-8 rounded-full overflow-hidden bg-white/20 flex items-center justify-center p-1">
+            <Leaf className="h-5 w-5 text-white" />
+          </div>
+          <h2 className="text-lg font-medium text-white flex items-center"> 
+            Ecoverse Analysis
+          </h2>
+        </div>
+        <Button
+          onClick={resetChat}
+          variant="outline"
+          size="sm"
+          className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+          disabled={loading || initialLoading}
+        >
+          <RefreshCw className="h-4 w-4 mr-1" />
+          Reset
+        </Button>
+      </div>
+
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-gradient-to-b from-slate-50 to-white">
+        {initialLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="animate-pulse flex flex-col items-center">
+              <div className="relative h-12 w-12 rounded-full overflow-hidden bg-green-100 flex items-center justify-center p-2">
+                <Leaf className="h-7 w-7 text-green-600" />
+              </div>
+              <p className="text-sm text-gray-500 mt-3">Loading analysis...</p>
+            </div>
+          </div>
+        ) : apiError ? (
+          <div className="flex flex-col items-center justify-center h-full">
+            <p className="text-red-500 mb-3">{apiError}</p>
+            <Button onClick={fetchInitialAnalysis} variant="outline" size="sm">
+              Try Again
+            </Button>
+          </div>
+        ) : (
+          <AnimatePresence>
+            {messages.map((message, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className={`flex ${
+                  message.role === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
+                <div 
+                  className={`flex items-start gap-3 max-w-[90%] ${
+                    message.role === "user" ? "flex-row-reverse" : "flex-row"
+                  }`}
+                >
+                  {/* Icon - positioned beside the message */}
+                  <div 
+                    className={`
+                      flex-shrink-0 rounded-full p-2 shadow-sm
+                      ${message.role === "user" 
+                        ? "bg-blue-100 text-blue-600" 
+                        : "bg-green-100 text-green-600"
+                      }
+                    `}
+                  >
+                    {message.role === "user" ? (
+                      <User className="h-4 w-4" />
+                    ) : (
+                      <Bot className="h-4 w-4" />
+                    )}
+                  </div>
+                  
+                  {/* Message content */}
+                  <div
+                    className={`
+                      p-4 rounded-2xl 
+                      ${message.role === "user" 
+                        ? "bg-blue-600 text-white shadow-md" 
+                        : "bg-white border border-gray-100 shadow-md"
+                      }
+                    `}
+                  >
+                    {message.role === "user" ? (
+                      <p className="whitespace-pre-wrap">{message.content}</p>
+                    ) : (
+                      <div className="prose prose-sm max-w-none 
+                        prose-headings:font-bold 
+                        prose-h1:text-xl prose-h1:mb-6 prose-h1:mt-2
+                        prose-h2:text-lg prose-h2:mb-4 prose-h2:mt-6
+                        prose-h3:text-base prose-h3:mb-3 prose-h3:mt-5
+                        prose-p:my-3
+                        prose-ul:my-4 prose-ul:space-y-2
+                        prose-li:my-1
+                        prose-hr:my-6"
+                      >
+                        <ReactMarkdown
+                          components={{
+                            h1: ({ node, ...props }) => <h1 className="font-bold text-xl mb-6 mt-2" {...props} />,
+                            h2: ({ node, ...props }) => <h2 className="font-bold text-lg mb-4 mt-6" {...props} />,
+                            h3: ({ node, ...props }) => <h3 className="font-bold text-base mb-3 mt-5" {...props} />,
+                            ul: ({ node, ...props }) => <ul className="my-4 space-y-2" {...props} />,
+                            li: ({ node, ...props }) => <li className="my-1" {...props} />,
+                            p: ({ node, ...props }) => <p className="my-3" {...props} />,
+                            hr: ({ node, ...props }) => <hr className="my-6" {...props} />,
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+            
+            {/* Loading animation for response */}
+            {loading && (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex justify-start"
+              >
+                <div className="relative max-w-[90%]">
+                  {/* Loading animation with icon overlay */}
+                  <div className="p-4 rounded-2xl bg-white border border-gray-100 shadow-md flex items-center space-x-2 pt-8 md:pt-4 pl-8 md:pl-4">
+                    {/* Icon positioned absolutely on mobile, relatively on desktop */}
+                    <div className="absolute top-2 left-2 md:absolute md:top-4 md:right-[-40px] rounded-full p-2 shadow-sm bg-green-100 text-green-600 z-10">
+                      <Bot className="h-4 w-4" />
+                    </div>
+                    
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input Area - Fixed at the bottom */}
+      <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-10">
+        <form onSubmit={handleSubmit} className="flex space-x-2">
+          <Textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ask anything..."
+            className="min-h-[60px] flex-1 border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 rounded-xl resize-none"
+            disabled={loading || initialLoading}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
+          />
+          <Button
+            type="submit"
+            disabled={!input.trim() || loading || initialLoading}
+            className="bg-green-600 hover:bg-green-700 text-white self-end h-[60px] px-5 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg"
+          >
+            {loading ? (
+              <RefreshCw className="h-5 w-5 animate-spin" />
+            ) : (
+              <>
+                <Send className="h-5 w-5 mr-2" />
+                Send
+              </>
+            )}
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
+} 
