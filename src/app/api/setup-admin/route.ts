@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
+const bcrypt = require('bcryptjs');
 
 export async function GET(request: NextRequest) {
   return await setupAdmin();
@@ -12,9 +12,13 @@ export async function POST(request: NextRequest) {
 
 async function setupAdmin() {
   try {
+    console.log('🔐 Starting admin setup...');
+    
     // Check if admin already exists
+    console.log('Checking for existing admin...');
     const existingAdmin = await prisma.admin.findFirst();
     if (existingAdmin) {
+      console.log('✅ Admin already exists');
       return NextResponse.json({ 
         success: true, 
         message: "Admin user already exists",
@@ -25,8 +29,10 @@ async function setupAdmin() {
       });
     }
 
+    console.log('Creating new admin user...');
     // Create admin user
     const hashedPassword = await bcrypt.hash('admin123', 12);
+    console.log('Password hashed successfully');
     
     const admin = await prisma.admin.create({
       data: {
@@ -35,6 +41,7 @@ async function setupAdmin() {
       }
     });
 
+    console.log('✅ Admin user created successfully');
     return NextResponse.json({ 
       success: true, 
       message: "Admin user created successfully!",
@@ -45,10 +52,11 @@ async function setupAdmin() {
     });
     
   } catch (error) {
-    console.error('Error setting up admin:', error);
+    console.error('❌ Error setting up admin:', error);
     return NextResponse.json({ 
       success: false, 
-      error: "Failed to create admin user" 
+      error: "Failed to create admin user",
+      details: error instanceof Error ? error.message : "Unknown error"
     }, { status: 500 });
   }
 }
