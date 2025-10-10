@@ -23,11 +23,21 @@ interface User {
 
 interface Analysis {
   id: string;
+  userId: string;
   imageUrl: string;
   label: string;
-  category?: string;
-  type?: string;
-  createdAt: string;
+  category: string | null;
+  type: string | null;
+  degradability: string | null;
+  environmentalImpact: string | null;
+  harms: string | null;
+  disposal: string | null;
+  potentialForReuse: string | null;
+  alternatives: string | null;
+  recommendations: string | null;
+  extraNotes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export default function DashboardPage() {

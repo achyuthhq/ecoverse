@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { User } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import FormData from "form-data";
@@ -16,6 +15,13 @@ import ProfilePicture from "@/components/ui/profile-picture";
 
 // ImgBB API key
 const IMGBB_API_KEY = "0614a461e2fe444df055e2f533490158";
+
+interface User {
+  id: string;
+  name: string | null;
+  image?: string | null;
+  profileShape?: string;
+}
 
 interface ProfileSectionProps {
   user: User;
@@ -234,18 +240,6 @@ export default function ProfileSection({ user }: ProfileSectionProps) {
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input
-                id="email"
-                value={user.email || ""}
-                disabled
-                className="bg-gray-50"
-              />
-              <p className="text-xs text-gray-500">
-                Email address cannot be changed
-              </p>
-            </div>
             
             <div className="pt-4">
               <Button 

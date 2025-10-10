@@ -46,7 +46,7 @@ export async function authenticateAdmin(username: string, password: string): Pro
       id: admin.id,
       username: admin.username,
       createdAt: admin.createdAt,
-      lastLogin: admin.lastLogin
+      lastLogin: admin.lastLogin || undefined
     };
   } catch (error) {
     console.error("Admin authentication error:", error);
@@ -90,11 +90,11 @@ export async function generateAccessCode(subscriptionType: "monthly" | "lifetime
     id: accessCode.id,
     code: accessCode.code,
     subscriptionType: accessCode.subscriptionType as "monthly" | "lifetime",
-    expiresAt: accessCode.expiresAt,
+    expiresAt: accessCode.expiresAt || undefined,
     isActive: accessCode.isActive,
     createdAt: accessCode.createdAt,
-    usedAt: accessCode.usedAt,
-    userId: accessCode.userId
+    usedAt: accessCode.usedAt || undefined,
+    userId: accessCode.userId || undefined || undefined
   };
 }
 
@@ -130,11 +130,11 @@ export async function validateAccessCode(code: string): Promise<{ valid: boolean
             id: accessCode.id,
             code: accessCode.code,
             subscriptionType: accessCode.subscriptionType as "monthly" | "lifetime",
-            expiresAt: accessCode.expiresAt,
+            expiresAt: accessCode.expiresAt || undefined,
             isActive: accessCode.isActive,
             createdAt: accessCode.createdAt,
-            usedAt: accessCode.usedAt,
-            userId: accessCode.userId
+            usedAt: accessCode.usedAt || undefined,
+            userId: accessCode.userId || undefined
           },
           user: accessCode.user
         };
@@ -145,11 +145,11 @@ export async function validateAccessCode(code: string): Promise<{ valid: boolean
             id: accessCode.id,
             code: accessCode.code,
             subscriptionType: accessCode.subscriptionType as "monthly" | "lifetime",
-            expiresAt: accessCode.expiresAt,
+            expiresAt: accessCode.expiresAt || undefined,
             isActive: accessCode.isActive,
             createdAt: accessCode.createdAt,
-            usedAt: accessCode.usedAt,
-            userId: accessCode.userId
+            usedAt: accessCode.usedAt || undefined,
+            userId: accessCode.userId || undefined
           },
           user: accessCode.user
         };
@@ -165,11 +165,11 @@ export async function validateAccessCode(code: string): Promise<{ valid: boolean
         id: accessCode.id,
         code: accessCode.code,
         subscriptionType: accessCode.subscriptionType as "monthly" | "lifetime",
-        expiresAt: accessCode.expiresAt,
+        expiresAt: accessCode.expiresAt || undefined,
         isActive: accessCode.isActive,
         createdAt: accessCode.createdAt,
-        usedAt: accessCode.usedAt,
-        userId: accessCode.userId
+        usedAt: accessCode.usedAt || undefined,
+        userId: accessCode.userId || undefined
       },
       user: accessCode.user
     };
