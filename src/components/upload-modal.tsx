@@ -372,12 +372,12 @@ export default function UploadModal({ isOpen, onClose }: UploadModalProps) {
                       transition={{ duration: 0.3 }}
                       className="relative"
                     >
-                      <div className="relative aspect-square max-h-80 rounded-3xl overflow-hidden border-2 border-gray-200 shadow-xl">
+                      <div className="relative aspect-square max-h-80 rounded-3xl overflow-hidden border-2 border-gray-200 shadow-xl bg-gray-50 flex items-center justify-center">
                         <Image
                           src={image}
                           alt="Preview"
                           fill
-                          className="object-cover"
+                          className="object-contain"
                         />
                         <button
                           onClick={handleRemoveImage}
@@ -466,12 +466,12 @@ export default function UploadModal({ isOpen, onClose }: UploadModalProps) {
                       animate={{ opacity: 1, scale: 1 }}
                       className="mt-6 space-y-6"
                     >
-                      <div className="relative aspect-square max-h-80 rounded-3xl overflow-hidden border-2 border-gray-200 shadow-xl">
+                      <div className="relative aspect-square max-h-80 rounded-3xl overflow-hidden border-2 border-gray-200 shadow-xl bg-gray-50 flex items-center justify-center">
                         <Image
                           src={image}
                           alt="Captured photo"
                           fill
-                          className="object-cover"
+                          className="object-contain"
                         />
                       </div>
                       
