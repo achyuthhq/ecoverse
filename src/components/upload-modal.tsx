@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import CameraCapture from "@/components/CameraCapture";
 import ImageCropper from "@/components/image-cropper";
+import { useCodeAuth } from "@/lib/auth-utils";
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ interface UploadModalProps {
 }
 
 export default function UploadModal({ isOpen, onClose }: UploadModalProps) {
+  const { user } = useCodeAuth();
   const [image, setImage] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -173,11 +175,17 @@ export default function UploadModal({ isOpen, onClose }: UploadModalProps) {
       reader.readAsDataURL(file);
       const base64Image = await fileReadPromise;
       
+      // Get user ID for authentication
+      if (!user || !user.id) {
+        throw new Error("User not found. Please log in again.");
+      }
+
       // Submit to analysis API
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-user-id': user.id,
         },
         body: JSON.stringify({ image: base64Image }),
       });
@@ -198,7 +206,7 @@ export default function UploadModal({ isOpen, onClose }: UploadModalProps) {
       // Redirect to analysis page after successful upload
       setTimeout(() => {
         if (data && data.id) {
-          router.push(`/analysis/${data.id}`);
+          router.push(`/dashboard/analysis/${data.id}`);
         } else {
           throw new Error('No analysis ID returned from server');
         }
@@ -288,7 +296,7 @@ export default function UploadModal({ isOpen, onClose }: UploadModalProps) {
           )}
 
           {/* Enhanced Content */}
-          <div className="p-6 max-h-[60vh] overflow-y-auto">
+          <div className={`p-6 ${showCropper ? 'max-h-[70vh] overflow-hidden' : 'max-h-[60vh] overflow-y-auto'}`}>
             <AnimatePresence mode="wait">
               {showCropper && originalImage ? (
                 <motion.div

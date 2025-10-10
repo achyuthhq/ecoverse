@@ -114,6 +114,7 @@ export default function ProfileSection({ user }: ProfileSectionProps) {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          "x-user-id": user.id,
         },
         body: JSON.stringify({
           name,

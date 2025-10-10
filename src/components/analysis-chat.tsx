@@ -41,6 +41,7 @@ export default function AnalysisChat({ analysisId, initialAnalysisData }: Analys
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [analysisData, setAnalysisData] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -87,19 +88,36 @@ export default function AnalysisChat({ analysisId, initialAnalysisData }: Analys
     setIsInitialLoading(true);
     
     try {
-      const response = await fetch(`/api/analysis/${analysisId}`);
+      const response = await fetch(`/api/analyses/${analysisId}`);
 
       if (!response.ok) {
         throw new Error("Failed to fetch analysis data");
       }
 
       const data = await response.json();
+      setAnalysisData(data);
       
-      // Create a welcome message
+      // Create a welcome message with specific analysis context
       const welcomeMessage: Message = {
         id: `welcome-message`,
         role: "ai",
-        content: `# Analysis Results\n\nI've analyzed this item and here's what I found. Please ask me any questions about its environmental impact or disposal options.`,
+        content: `👋 **Hey there! I'm Ecoverse AI** 🌱
+
+I've just analyzed your **${data.label || 'item'}** and I'm here to help you with any questions about it!
+
+**What I found:**
+• **Material Type:** ${data.type || 'Unknown'}
+• **Category:** ${data.category || 'Uncategorized'}
+• **Environmental Impact:** ${data.environmentalImpact || 'Analysis in progress'}
+
+**I can help you with:**
+🔍 **Specific questions** about this item's disposal, recycling, or environmental impact
+♻️ **Recycling guidance** tailored to your specific item
+🌿 **Eco-friendly alternatives** for this type of item
+💡 **DIY upcycling ideas** for your specific item
+📊 **Detailed impact analysis** and recommendations
+
+Just ask me anything about your **${data.label || 'item'}**! 🚀`,
         timestamp: new Date(),
       };
       
@@ -107,20 +125,24 @@ export default function AnalysisChat({ analysisId, initialAnalysisData }: Analys
     } catch (error) {
       console.error("Error fetching analysis data:", error);
       
-      const errorMessage: Message = {
-        id: `error-message`,
+      const welcomeMessage: Message = {
+        id: `welcome-${Date.now()}`,
         role: "ai",
-        content: "I'm sorry, but I couldn't retrieve the analysis data. Please try again later.",
+        content: `👋 **Hey there! I'm Ecoverse AI** 🌱
+
+I'm your personal environmental assistant! I can help you with:
+
+🔍 **Analysis Questions** - Ask about the environmental impact, materials, or disposal methods
+♻️ **Recycling Tips** - Get specific guidance on how to properly recycle this item
+🌿 **Eco Alternatives** - Discover sustainable alternatives and better choices
+💡 **DIY Ideas** - Learn creative ways to repurpose or upcycle this item
+📊 **Impact Data** - Understand the environmental footprint and carbon impact
+
+Just ask me anything about this analysis, and I'll provide detailed, helpful information! 🚀`,
         timestamp: new Date(),
       };
       
-      setMessages([errorMessage]);
-      
-      toast({
-        title: "Error",
-        description: "Failed to fetch analysis data.",
-        variant: "destructive",
-      });
+      setMessages([welcomeMessage]);
     } finally {
       setIsInitialLoading(false);
     }
@@ -131,6 +153,7 @@ export default function AnalysisChat({ analysisId, initialAnalysisData }: Analys
     if (!initialAnalysisData) return;
     
     setIsInitialLoading(true);
+    setAnalysisData(initialAnalysisData);
     
     try {
       // Create detailed prompt for the API
@@ -330,13 +353,44 @@ export default function AnalysisChat({ analysisId, initialAnalysisData }: Analys
     setIsLoading(true);
     
     try {
-      // Use Pollinations API for AI response
-      const prompt = `You are EcoAnalyst, an AI expert in environmental analysis helping a user understand the environmental impact of ${initialAnalysisData?.label || 'this item'}. 
-      The user asks: "${input}"
+      // Get current analysis data (either from props or fetched data)
+      const currentAnalysisData = analysisData || initialAnalysisData;
       
-      Respond with helpful, accurate, and detailed information about this item's environmental impact, disposal methods, or eco-friendly alternatives. Be specific and educational in your response.`;
+      // Create detailed context about the specific analysis
+      const analysisContext = currentAnalysisData ? `
+**ANALYSIS CONTEXT:**
+- Item: ${currentAnalysisData.label || 'Unknown item'}
+- Material Type: ${currentAnalysisData.type || 'Unknown'}
+- Category: ${currentAnalysisData.category || 'Uncategorized'}
+- Environmental Impact: ${currentAnalysisData.environmentalImpact || 'Not specified'}
+- Disposal Method: ${currentAnalysisData.disposal || 'Not specified'}
+- Alternatives: ${currentAnalysisData.alternatives || 'Not specified'}
+- Recommendations: ${currentAnalysisData.recommendations || 'Not specified'}
+- Harms: ${currentAnalysisData.harms || 'Not specified'}
+- Potential for Reuse: ${currentAnalysisData.potentialForReuse || 'Not specified'}
+- Degradability: ${currentAnalysisData.degradability || 'Not specified'}
+` : '';
+
+      // Use Pollinations API for AI response with specific analysis context
+      const prompt = `You are EcoAnalyst, an AI expert in environmental analysis. You have just analyzed a specific item and the user is asking questions about it.
+
+${analysisContext}
+
+**USER QUESTION:** "${input}"
+
+**INSTRUCTIONS:**
+- Answer based on the SPECIFIC analysis data provided above
+- Be contextual and relevant to this exact item
+- Provide specific, actionable advice for this particular item
+- If the user asks about disposal, give specific steps for this item type
+- If asking about environmental impact, reference the actual analysis findings
+- Be concise, helpful, and educational
+- Use bullet points and clear formatting
+- Include practical next steps when relevant
+
+Respond with helpful, accurate, and detailed information tailored to this specific item.`;
       
-      const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}`);
+      const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}?token=jpeqKMnAtaTE0GCO`);
 
       if (!response.ok) {
         throw new Error("Failed to get AI response");

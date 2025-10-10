@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import FormData from "form-data";
 import axios from "axios";
@@ -15,10 +13,19 @@ const POLLINATIONS_API_URL = "https://text.pollinations.ai/";
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Get user ID from request headers (sent by frontend)
+    const userId = request.headers.get('x-user-id');
     
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // Debug: Log headers
+    console.log("=== ANALYZE API DEBUG ===");
+    console.log("Request method:", request.method);
+    console.log("Request URL:", request.url);
+    console.log("All headers:", Object.fromEntries(request.headers.entries()));
+    console.log("x-user-id header:", userId);
+    console.log("Header exists check:", request.headers.has('x-user-id'));
+    
+    if (!userId) {
+      return NextResponse.json({ error: "User ID required" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -148,7 +155,7 @@ export async function POST(request: NextRequest) {
         
         const analysis = await prisma.analysis.create({
           data: {
-            userId: session.user.id,
+            userId: userId,
             imageUrl: validImageUrl,
             label: ecoData.item,
             extraNotes: ecoData.caption, // Save the full caption as extra notes

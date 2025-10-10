@@ -7,8 +7,10 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { useCodeAuth } from "@/lib/auth-utils";
 
 export function ImageUpload() {
+  const { user, isLoading } = useCodeAuth();
   const [image, setImage] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -122,11 +124,27 @@ export function ImageUpload() {
       reader.readAsDataURL(file);
       const base64Image = await fileReadPromise;
       
+      // Get user from useCodeAuth hook
+      console.log("User from useCodeAuth:", user);
+      
+      if (!user) {
+        console.error("No user found from useCodeAuth hook");
+        throw new Error("User not found. Please log in again.");
+      }
+      
+      if (!user.id) {
+        console.error("User ID is missing from user object:", user);
+        throw new Error("User ID not found. Please log in again.");
+      }
+      
+      console.log("Using user ID:", user.id);
+
       // Submit to analysis API
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-user-id': user.id,
         },
         body: JSON.stringify({ image: base64Image }),
       });
@@ -144,7 +162,7 @@ export function ImageUpload() {
       // Redirect to analysis page after successful upload
       setTimeout(() => {
         if (data && data.id) {
-          router.push(`/analysis/${data.id}`);
+          router.push(`/dashboard/analysis/${data.id}`);
         } else {
           throw new Error('No analysis ID returned from server');
         }

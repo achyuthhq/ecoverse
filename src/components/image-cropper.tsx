@@ -45,7 +45,7 @@ export default function ImageCropper({ imageSrc, onConfirm, onCancel }: ImageCro
           const scaledWidth = img.width * scale;
           const scaledHeight = img.height * scale;
           
-          const cropSize = Math.min(scaledWidth, scaledHeight) * 0.8;
+          const cropSize = Math.min(scaledWidth, scaledHeight) * 0.6;
           const cropX = (scaledWidth - cropSize) / 2;
           const cropY = (scaledHeight - cropSize) / 2;
           
@@ -259,7 +259,7 @@ export default function ImageCropper({ imageSrc, onConfirm, onCancel }: ImageCro
       <div className="p-4">
         <div
           ref={containerRef}
-          className="relative mx-auto max-w-md max-h-96 overflow-hidden rounded-lg bg-gray-100"
+          className="relative mx-auto w-full max-w-xs h-48 overflow-hidden rounded-lg bg-gray-100"
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}

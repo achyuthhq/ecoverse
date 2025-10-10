@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
@@ -13,10 +11,11 @@ const profileUpdateSchema = z.object({
 
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Get user ID from request headers (sent by frontend)
+    const userId = request.headers.get('x-user-id');
     
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!userId) {
+      return NextResponse.json({ error: "User ID required" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -35,7 +34,7 @@ export async function PUT(request: NextRequest) {
     // Update user profile
     const updatedUser = await prisma.user.update({
       where: {
-        id: session.user.id,
+        id: userId,
       },
       data: {
         name: name !== undefined ? name : undefined,

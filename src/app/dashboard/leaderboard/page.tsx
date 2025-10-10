@@ -1,47 +1,82 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Trophy, Medal, Award, Users, Zap, Target } from "lucide-react";
 
 import DashboardShell from "@/components/dashboard-shell";
 import ProfilePicture from "@/components/ui/profile-picture";
 import { calculateEcoAwarenessScore } from "@/lib/utils";
+import ClassicLoader from "@/components/ui/classic-loader";
 
-export default async function LeaderboardPage() {
-  const session = await getServerSession(authOptions);
+interface User {
+  id: string;
+  name: string;
+  subscriptionType: string;
+  subscriptionExpires?: string;
+}
 
-  if (!session) {
-    redirect("/auth/login");
+interface Analysis {
+  id: string;
+  imageUrl: string;
+  label: string;
+  category?: string;
+  type?: string;
+  createdAt: string;
+}
+
+interface LeaderboardUser {
+  id: string;
+  name: string;
+  image?: string;
+  profileShape?: string;
+  analyses: Analysis[];
+  ecoAwarenessScore: number;
+  analysisCount: number;
+}
+
+export default function LeaderboardPage() {
+  const [user, setUser] = useState<User | null>(null);
+  const [leaderboardUsers, setLeaderboardUsers] = useState<LeaderboardUser[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check for user session
+    const userSession = localStorage.getItem("userSession");
+    if (!userSession) {
+      router.push("/auth/code-login");
+      return;
+    }
+
+    const userData = JSON.parse(userSession);
+    setUser(userData);
+    loadLeaderboardData();
+  }, [router]);
+
+  const loadLeaderboardData = async () => {
+    try {
+      const response = await fetch('/api/leaderboard');
+      if (response.ok) {
+        const data = await response.json();
+        setLeaderboardUsers(data);
+      }
+    } catch (error) {
+      console.error("Failed to load leaderboard data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-50 flex items-center justify-center">
+        <ClassicLoader size="lg" />
+      </div>
+    );
   }
 
-  // Fetch top users with their analyses
-  const topUsers = await prisma.user.findMany({
-    include: {
-      analyses: {
-        orderBy: {
-          createdAt: "desc",
-        },
-      },
-    },
-    orderBy: {
-      analyses: {
-        _count: "desc",
-      },
-    },
-    take: 10,
-  });
-
-  // Calculate eco awareness scores for each user using shared function
-  const usersWithScores = topUsers.map(user => ({
-    ...user,
-    ecoAwarenessScore: calculateEcoAwarenessScore(user.analyses),
-    analysisCount: user.analyses.length
-  }));
-
-  // Sort by eco awareness score instead of just analysis count
-  usersWithScores.sort((a, b) => b.ecoAwarenessScore - a.ecoAwarenessScore);
+  if (!user) return null;
 
   return (
     <DashboardShell>
@@ -75,7 +110,7 @@ export default async function LeaderboardPage() {
             </div>
             
             <div className="space-y-4">
-              {usersWithScores.map((user, index) => (
+              {leaderboardUsers.map((user, index) => (
                 <div 
                   key={user.id}
                   className={`relative overflow-hidden flex items-center p-4 rounded-2xl transition-all duration-300 hover:scale-[1.01] ${
@@ -156,7 +191,7 @@ export default async function LeaderboardPage() {
                 </div>
               ))}
               
-              {usersWithScores.length === 0 && (
+              {leaderboardUsers.length === 0 && (
                 <div className="text-center py-8">
                   <p className="text-gray-500">No analysis data available yet. Be the first to contribute!</p>
                 </div>

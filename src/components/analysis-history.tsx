@@ -42,7 +42,7 @@ const AnalysisHistory = ({ analyses }: AnalysisHistoryProps) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
           >
-            <Link href={`/analysis/${analysis.id}`}>
+            <Link href={`/dashboard/analysis/${analysis.id}`}>
               <div className="bg-white rounded-xl overflow-hidden border border-gray-100 hover:shadow-md hover:border-gray-200 transition-all duration-300 h-full">
                 <div className="relative aspect-square">
                   <Image

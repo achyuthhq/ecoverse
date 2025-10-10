@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LogOut, AlertTriangle, Loader2 } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { useCodeAuth } from "@/lib/auth-utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,12 +17,13 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function LogoutSection() {
+  const { logout } = useCodeAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
-    await signOut({ callbackUrl: "/auth/login" });
+    logout();
   };
 
   return (

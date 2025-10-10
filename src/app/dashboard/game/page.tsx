@@ -1,31 +1,22 @@
 "use client";
 
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { Gamepad2, Maximize2 } from "lucide-react";
-import { useEffect } from "react";
-
 import DashboardShell from "@/components/dashboard-shell";
+import { useCodeAuth } from "@/lib/auth-utils";
+import ClassicLoader from "@/components/ui/classic-loader";
 
 export default function GamePage() {
-  useEffect(() => {
-    // Check authentication on client side
-    const checkAuth = async () => {
-      try {
-        const response = await fetch('/api/auth/session');
-        const session = await response.json();
-        if (!session || !session.user) {
-          window.location.href = '/auth/login';
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        window.location.href = '/auth/login';
-      }
-    };
-    
-    checkAuth();
-  }, []);
+  const { user, isLoading } = useCodeAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-50 flex items-center justify-center">
+        <ClassicLoader size="lg" />
+      </div>
+    );
+  }
+
+  if (!user) return null;
 
   const handleFullscreen = () => {
     const iframe = document.querySelector('iframe[title="Recycling Game"]') as HTMLIFrameElement;

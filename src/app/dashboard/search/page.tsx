@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { prisma } from "@/lib/prisma";
 import Image from "next/image";
 import Link from "next/link";
 import { Search, Clock, ArrowRight, Filter, Sparkles, Zap, Target, X } from "lucide-react";
@@ -12,6 +10,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import DashboardShell from "@/components/dashboard-shell";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useCodeAuth } from "@/lib/auth-utils";
+import ClassicLoader from "@/components/ui/classic-loader";
 
 interface Analysis {
   id: string;
@@ -19,11 +19,11 @@ interface Analysis {
   type: string;
   category: string;
   imageUrl: string;
-  createdAt: Date;
+  createdAt: string;
 }
 
 export default function SearchPage() {
-  const { data: session, status } = useSession();
+  const { user, isLoading: authLoading } = useCodeAuth();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
@@ -31,19 +31,12 @@ export default function SearchPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/login");
-    }
-  }, [status, router]);
-
   // Fetch analyses on component mount
   useEffect(() => {
-    if (session?.user?.id) {
+    if (user) {
       fetchAnalyses();
     }
-  }, [session]);
+  }, [user]);
 
   // Filter analyses based on search query and filter
   useEffect(() => {
@@ -71,7 +64,7 @@ export default function SearchPage() {
 
   const fetchAnalyses = async () => {
     try {
-      const response = await fetch('/api/analyses');
+      const response = await fetch(`/api/user/${user?.id}/analyses`);
       if (response.ok) {
         const data = await response.json();
         setAnalyses(data);
@@ -103,25 +96,15 @@ export default function SearchPage() {
     { key: "e-waste", label: "E-Waste", icon: "📱" }
   ];
 
-  if (status === "loading" || isLoading) {
+  if (authLoading || isLoading) {
     return (
-      <DashboardShell>
-        <div className="flex justify-center items-center h-64">
-          <div className="text-center">
-            <div className="mx-auto bg-gradient-to-br from-green-400 to-blue-500 p-4 rounded-2xl shadow-lg w-16 h-16 flex items-center justify-center mb-4">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              >
-                <Search className="h-8 w-8 text-white" />
-              </motion.div>
-            </div>
-            <p className="text-gray-600">Loading your analyses...</p>
-          </div>
-        </div>
-      </DashboardShell>
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-50 flex items-center justify-center">
+        <ClassicLoader size="lg" />
+      </div>
     );
   }
+
+  if (!user) return null;
 
   return (
     <DashboardShell>
@@ -250,7 +233,7 @@ export default function SearchPage() {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
                     >
-                      <Link href={`/analysis/${analysis.id}`} className="block">
+                      <Link href={`/dashboard/analysis/${analysis.id}`} className="block">
                         <div className="relative overflow-hidden p-6 rounded-2xl bg-white/60 hover:bg-white/80 border border-gray-100 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] group">
                           {/* Glass effect overlay */}
                           <div className="absolute inset-0 bg-gradient-to-br from-green-50/30 to-blue-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>

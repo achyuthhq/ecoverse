@@ -1,20 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // Get user ID from request headers (sent by frontend)
+    const userId = request.headers.get('x-user-id');
+    
+    if (!userId) {
+      return NextResponse.json({ error: "User ID required" }, { status: 401 });
     }
 
     // Fetch user's analyses
     const analyses = await prisma.analysis.findMany({
       where: {
-        userId: session.user.id,
+        userId: userId,
       },
       orderBy: {
         createdAt: "desc",

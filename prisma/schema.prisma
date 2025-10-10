@@ -47,10 +47,13 @@ model User {
   profileShape  String?   @default("circle") // Profile picture shape: circle, square, triangle
   source        String?   // Where did you hear about us?
   goals         String?   // What would you like to achieve with Ecoverse?
+  subscriptionType String? // "monthly" | "lifetime"
+  subscriptionExpires DateTime?
   accounts      Account[]
   sessions      Session[]
   analyses      Analysis[]
   feedback      Feedback[]
+  accessCode    AccessCode?
 }
 
 model VerificationToken {
@@ -89,4 +92,29 @@ model Feedback {
   createdAt DateTime @default(now())
   
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AccessCode {
+  id              String   @id @default(cuid())
+  code            String   @unique // 6-digit code
+  subscriptionType String   // "monthly" | "lifetime"
+  expiresAt       DateTime? // null for lifetime, date for monthly
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  usedAt          DateTime?
+  userId          String?  @unique
+  user            User?    @relation(fields: [userId], references: [id])
+  
+  // Analytics
+  deviceInfo      String?  // Optional device tracking
+  ipAddress       String?  // Optional IP tracking
+  location        String?  // Optional location
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String   // Hashed
+  createdAt DateTime @default(now())
+  lastLogin DateTime?
 } 

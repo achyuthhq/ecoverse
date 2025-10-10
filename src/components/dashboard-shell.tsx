@@ -2,8 +2,10 @@
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { useCodeAuth } from "@/lib/auth-utils";
+import ClassicLoader from "@/components/ui/classic-loader";
 import { 
   Plus,
   Home, 
@@ -36,15 +38,21 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { useSession } from "next-auth/react";
 import UploadModal from "@/components/upload-modal";
 
 interface DashboardShellProps {
   children: React.ReactNode;
 }
 
+interface User {
+  id: string;
+  name: string;
+  subscriptionType: string;
+  subscriptionExpires?: string;
+}
+
 const DashboardShell = ({ children }: DashboardShellProps) => {
-  const { data: session } = useSession();
+  const { user, logout } = useCodeAuth();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
@@ -64,6 +72,16 @@ const DashboardShell = ({ children }: DashboardShellProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  // User session is now handled by useCodeAuth hook
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-50 flex items-center justify-center">
+        <ClassicLoader size="lg" />
+      </div>
+    );
+  }
   
   // Reorganize navigation items - 2 on each side of the center button
   const leftNavItems = [
@@ -315,7 +333,7 @@ const DashboardShell = ({ children }: DashboardShellProps) => {
       setTimeout(() => {
         // Redirect to the analysis page
         if (data && data.id) {
-          window.location.href = `/analysis/${data.id}`;
+          window.location.href = `/dashboard/analysis/${data.id}`;
         }
         
         // Close modal and reset state after navigation has started

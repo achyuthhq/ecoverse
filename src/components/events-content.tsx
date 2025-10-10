@@ -106,6 +106,15 @@ export default function EventsContent() {
     }
   }, [userLocation, hasSearched]);
 
+  // Add markers when recycling locations change
+  useEffect(() => {
+    if (recyclingLocations.length > 0 && mapInstanceRef.current && leafletLoadedRef.current) {
+      console.log('Adding markers for', recyclingLocations.length, 'locations');
+      const L = (window as any).L;
+      addRecyclingMarkers(L, mapInstanceRef.current);
+    }
+  }, [recyclingLocations]);
+
   // Initialize the map
   const initializeMap = () => {
     console.log('Initializing map');
@@ -155,7 +164,9 @@ export default function EventsContent() {
       // Add markers
       addUserMarker(L, map);
       
+      // Add recycling markers if we have locations
       if (recyclingLocations.length > 0) {
+        console.log('Adding recycling markers during map initialization');
         addRecyclingMarkers(L, map);
       }
       
@@ -215,43 +226,73 @@ export default function EventsContent() {
       });
       markersRef.current = [];
       
-      // Use a simple colored icon for recycling points
+      // Create a better recycling icon
       const recyclingIcon = L.divIcon({
         className: 'custom-div-icon',
-        html: `<div style="background-color: #4CAF50; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>`,
-        iconSize: [16, 16],
-        iconAnchor: [8, 8]
+        html: `
+          <div style="
+            background-color: #10B981; 
+            width: 20px; 
+            height: 20px; 
+            border-radius: 50%; 
+            border: 3px solid white; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+            font-weight: bold;
+          ">♻</div>
+        `,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
       });
       
+      console.log(`Adding ${recyclingLocations.length} recycling markers to map`);
+      
       // Add markers for each location
-      recyclingLocations.forEach(location => {
-        if (!location.lat || !location.lon || isNaN(location.lat) || isNaN(location.lon)) return;
+      recyclingLocations.forEach((location, index) => {
+        if (!location.lat || !location.lon || isNaN(location.lat) || isNaN(location.lon)) {
+          console.warn('Invalid coordinates for location:', location);
+          return;
+        }
         
         try {
           const marker = L.marker([location.lat, location.lon], { icon: recyclingIcon })
             .addTo(map)
             .bindPopup(`
-              <div class="text-sm">
-                <strong>${location.tags.name || "Recycling Point"}</strong>
-                <p class="mt-1">
-                  ${location.distance} km away
-                  ${location.tags.opening_hours ? `<span class="block mt-1">Hours: ${location.tags.opening_hours}</span>` : ''}
-                </p>
-                <p class="mt-1">
-                  ${getRecyclingMaterials(location.tags)}
-                </p>
+              <div class="text-sm p-2">
+                <div class="font-semibold text-green-800 mb-2">
+                  ${location.tags.name || "Recycling Point"}
+                </div>
+                <div class="text-gray-600 mb-1">
+                  📍 ${location.distance} km away
+                </div>
+                ${location.tags.opening_hours ? `<div class="text-gray-600 mb-1">🕒 ${location.tags.opening_hours}</div>` : ''}
+                <div class="text-gray-600 mb-2">
+                  ♻️ ${getRecyclingMaterials(location.tags)}
+                </div>
+                ${location.tags.operator ? `<div class="text-xs text-gray-500">Operated by: ${location.tags.operator}</div>` : ''}
               </div>
             `);
           
+          // Store location data on marker for easy access
+          marker.locationData = location;
+          
           marker.on('click', () => {
+            console.log('Marker clicked:', location);
             setSelectedLocation(location);
           });
           
           markersRef.current.push(marker);
+          console.log(`Added marker ${index + 1} for ${location.tags.name || 'Recycling Point'}`);
         } catch (error) {
           console.warn('Error creating marker for location:', location, error);
         }
       });
+      
+      console.log(`Successfully added ${markersRef.current.length} markers to map`);
     } catch (error) {
       console.error('Error adding recycling markers:', error);
     }
@@ -419,22 +460,31 @@ export default function EventsContent() {
   
   // View a location on map
   const viewLocationOnMap = (location: RecyclingLocation) => {
+    console.log('Viewing location on map:', location);
     setSelectedLocation(location);
     
     if (mapInstanceRef.current && location.lat && location.lon) {
-      mapInstanceRef.current.setView([location.lat, location.lon], 15);
+      // Pan to the location with a smooth animation
+      mapInstanceRef.current.setView([location.lat, location.lon], 16, {
+        animate: true,
+        duration: 1
+      });
       
       // Find and open the marker popup
-      markersRef.current.forEach(marker => {
-        try {
-          const markerLatLng = marker.getLatLng();
-          if (markerLatLng.lat === location.lat && markerLatLng.lng === location.lon) {
-            marker.openPopup();
+      setTimeout(() => {
+        markersRef.current.forEach(marker => {
+          try {
+            if (marker.locationData && marker.locationData.id === location.id) {
+              console.log('Opening popup for marker:', location);
+              marker.openPopup();
+            }
+          } catch (error) {
+            console.error("Error opening popup:", error);
           }
-        } catch (error) {
-          console.error("Error opening popup:", error);
-        }
-      });
+        });
+      }, 500); // Small delay to ensure map has panned
+    } else {
+      console.warn('Map not available or invalid coordinates');
     }
     
     // Also scroll to the card

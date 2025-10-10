@@ -1,45 +1,169 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import Image from "next/image";
-import Link from "next/link";
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { Leaf, TrendingUp, Zap, Target, Award, Sparkles, Star } from "lucide-react";
 
 import DashboardShell from "@/components/dashboard-shell";
 import ImageUpload from "@/components/image-upload";
 import { Button } from "@/components/ui/button";
 import AnalysisHistory from "@/components/analysis-history";
-import { prisma } from "@/lib/prisma";
 import { getRandomGreeting, calculateEcoAwarenessScore } from "@/lib/utils";
 import EcoTipsSection from "@/components/eco-tips-section";
+import { useCodeAuth } from "@/lib/auth-utils";
+import ClassicLoader from "@/components/ui/classic-loader";
 
-export default async function DashboardPage() {
-  const session = await getServerSession(authOptions);
+interface User {
+  id: string;
+  name: string;
+  subscriptionType: string;
+  subscriptionExpires?: string;
+}
 
-  if (!session) {
-    redirect("/auth/login");
+interface Analysis {
+  id: string;
+  imageUrl: string;
+  label: string;
+  category?: string;
+  type?: string;
+  createdAt: string;
+}
+
+export default function DashboardPage() {
+  const { user, updateUser } = useCodeAuth();
+  const [analyses, setAnalyses] = useState<Analysis[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showNameSetup, setShowNameSetup] = useState(false);
+  const [userName, setUserName] = useState("");
+  const [isUpdatingName, setIsUpdatingName] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      // Check if user needs to set their name
+      if (!user.name || user.name.startsWith("User-")) {
+        setShowNameSetup(true);
+      }
+      
+      loadUserData(user.id);
+    }
+  }, [user]);
+
+  const loadUserData = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/user/${userId}/analyses`);
+      if (response.ok) {
+        const data = await response.json();
+        setAnalyses(data);
+      }
+    } catch (error) {
+      console.error("Failed to load user data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleNameUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userName.trim() || !user) return;
+
+    setIsUpdatingName(true);
+    try {
+      const response = await fetch(`/api/user/${user.id}/update-name`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name: userName.trim() }),
+      });
+
+      if (response.ok) {
+        const updatedUser = { ...user, name: userName.trim() };
+        updateUser(updatedUser);
+        setShowNameSetup(false);
+      }
+    } catch (error) {
+      console.error("Failed to update name:", error);
+    } finally {
+      setIsUpdatingName(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-50 flex items-center justify-center">
+        <ClassicLoader size="lg" />
+      </div>
+    );
   }
 
-  // Fetch all analyses for stats
-  const allAnalyses = await prisma.analysis.findMany({
-    where: {
-      userId: session.user.id,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  if (showNameSetup) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md"
+        >
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border-0">
+            <div className="text-center mb-8">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-green-500 to-teal-600 shadow-lg">
+                  <Leaf className="h-8 w-8 text-white" />
+                </div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-green-600 bg-clip-text text-transparent">
+                  Welcome to Ecoverse!
+                </h1>
+              </div>
+              <p className="text-gray-600">
+                Let's personalize your experience. What should we call you?
+              </p>
+            </div>
 
-  // Get only recent 5 for display
-  const recentAnalyses = allAnalyses.slice(0, 5);
+            <form onSubmit={handleNameUpdate} className="space-y-6">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Your Name
+                </label>
+                <input
+                  type="text"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  placeholder="Enter your name"
+                  className="w-full h-12 px-4 rounded-xl border-2 border-gray-200 focus:border-green-500 focus:ring-green-500/20 text-lg bg-white text-gray-900 placeholder-gray-500"
+                  required
+                />
+              </div>
 
-  // Calculate eco awareness score using shared function
-  const ecoAwarenessScore = calculateEcoAwarenessScore(allAnalyses);
+              <Button
+                type="submit"
+                disabled={isUpdatingName || !userName.trim()}
+                className="w-full h-12 rounded-xl bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                      {isUpdatingName ? (
+                        <div className="flex items-center gap-2">
+                          <ClassicLoader size="sm" className="border-white" />
+                          <span>Setting up...</span>
+                        </div>
+                      ) : (
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5" />
+                    <span>Start My Journey</span>
+                  </div>
+                )}
+              </Button>
+            </form>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
-  // Get user's first name or default to 'User'
-  const firstName = session.user.name?.split(' ')[0] || 'User';
-  
-  // Get a random greeting
+  if (!user) return null;
+
+  const ecoAwarenessScore = calculateEcoAwarenessScore(analyses);
+  const recentAnalyses = analyses.slice(0, 5);
+  const firstName = user.name?.split(' ')[0] || 'User';
   const greeting = getRandomGreeting(firstName);
 
   return (
@@ -76,7 +200,7 @@ export default async function DashboardPage() {
               {[
                 {
                   title: "Analyses",
-                  value: allAnalyses.length,
+                  value: analyses.length,
                   description: "Total items analyzed",
                   color: "from-emerald-400 to-emerald-600",
                   icon: <TrendingUp className="h-5 w-5 text-emerald-500" />,

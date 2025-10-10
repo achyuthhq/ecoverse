@@ -1,17 +1,24 @@
+"use client";
+
 import { Suspense } from "react";
 import { Loader2, MapPin } from "lucide-react";
 import EventsContent from "@/components/events-content";
 import DashboardShell from "@/components/dashboard-shell";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { useCodeAuth } from "@/lib/auth-utils";
+import ClassicLoader from "@/components/ui/classic-loader";
 
-export default async function EventsPage() {
-  const session = await getServerSession(authOptions);
+export default function EventsPage() {
+  const { user, isLoading } = useCodeAuth();
 
-  if (!session) {
-    redirect("/auth/login");
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-50 flex items-center justify-center">
+        <ClassicLoader size="lg" />
+      </div>
+    );
   }
+
+  if (!user) return null;
 
   return (
     <DashboardShell>
@@ -34,8 +41,8 @@ export default async function EventsPage() {
           fallback={
             <div className="flex items-center justify-center h-[600px] bg-gray-50 rounded-xl">
               <div className="text-center">
-                <Loader2 className="h-10 w-10 text-green-500 animate-spin mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900">Loading Map</h3>
+                <ClassicLoader size="lg" />
+                <h3 className="text-lg font-medium text-gray-900 mt-4">Loading Map</h3>
               </div>
             </div>
           }
@@ -45,4 +52,4 @@ export default async function EventsPage() {
       </div>
     </DashboardShell>
   );
-} 
+}
