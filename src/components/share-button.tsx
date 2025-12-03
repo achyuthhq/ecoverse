@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Share2, Sparkles, CheckCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button2";
 import {
   Dialog,
   DialogContent,
@@ -64,9 +64,8 @@ export default function ShareButton({ analysisId, label, diyIdea }: ShareButtonP
       <DialogTrigger asChild>
         <Button
           variant="outline"
-          className="group relative overflow-hidden bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+          className="group relative overflow-hidden bg-white hover:bg-gray-100 text-gray-900 border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-green-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="relative flex items-center gap-2">
             <Sparkles className="h-4 w-4" />
             <span className="text-sm font-medium">Share</span>
@@ -75,7 +74,7 @@ export default function ShareButton({ analysisId, label, diyIdea }: ShareButtonP
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-center bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
+          <DialogTitle className="text-center text-gray-900">
             Share to Gallery
           </DialogTitle>
           <DialogDescription className="text-center text-gray-600">
@@ -84,23 +83,23 @@ export default function ShareButton({ analysisId, label, diyIdea }: ShareButtonP
         </DialogHeader>
         
         <div className="space-y-4">
-          <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
-            <h4 className="font-medium text-gray-900 mb-2">What will be shared:</h4>
-            <ul className="space-y-2 text-sm text-gray-700">
+          <div className="p-4 bg-white/10 rounded-lg border border-white/20">
+            <h4 className="font-medium text-white mb-2">What will be shared:</h4>
+            <ul className="space-y-2 text-sm text-gray-300">
               <li className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <div className="w-2 h-2 bg-white rounded-full"></div>
                 <span>Your analysis image</span>
               </li>
               <li className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+                <div className="w-2 h-2 bg-white rounded-full"></div>
                 <span>DIY idea recommendation as title</span>
               </li>
               <li className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-700 rounded-full"></div>
+                <div className="w-2 h-2 bg-white rounded-full"></div>
                 <span>Complete step-by-step DIY guide</span>
               </li>
               <li className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-800 rounded-full"></div>
+                <div className="w-2 h-2 bg-white rounded-full"></div>
                 <span>Your username and sharing time</span>
               </li>
             </ul>
@@ -113,8 +112,8 @@ export default function ShareButton({ analysisId, label, diyIdea }: ShareButtonP
           )}
 
           {isShared && (
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center gap-2 text-green-700">
+            <div className="p-3 bg-white/10 border border-white/20 rounded-lg">
+              <div className="flex items-center gap-2 text-white">
                 <CheckCircle className="h-4 w-4" />
                 <span className="text-sm font-medium">Successfully shared to gallery!</span>
               </div>
@@ -125,7 +124,7 @@ export default function ShareButton({ analysisId, label, diyIdea }: ShareButtonP
             <Button
               onClick={handleShare}
               disabled={isSharing || isShared}
-              className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
+              className="flex-1 bg-white hover:bg-gray-100 text-gray-900"
             >
               {isSharing ? (
                 <>

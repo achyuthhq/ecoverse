@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button2";
 
 export default function ImageUpload() {
   const [image, setImage] = useState<string | null>(null);

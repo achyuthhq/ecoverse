@@ -2,9 +2,9 @@
 
 import React, { useState } from "react";
 import { Shield, Lock, Trash2, Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button2";
+import { Switch } from "@/components/ui/switch2";
+import { Label } from "@/components/ui/label2";
 import { useToast } from "@/components/ui/use-toast";
 import {
   AlertDialog,

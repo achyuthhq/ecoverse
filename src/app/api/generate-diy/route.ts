@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 // BULLETPROOF AI GENERATION - ALWAYS WORKS, ALWAYS CREATIVE! 🏆
 function generateBulletproofComposition() {
@@ -110,16 +112,20 @@ function generateCreativeDisposalInstructions() {
 }
 
 // Function to generate AI-enhanced analysis data
-async function generateAIEnhancedData(prompt: string, imageUrl: string): Promise<any> {
+async function generateAIEnhancedData(prompt: string, imageUrl: string, model: string = 'openai'): Promise<any> {
   try {
-    // Use the Pollinations API with token
+    // Use the Pollinations API with model parameter
+    const apiKey = process.env.POLLINATIONS_API_KEY || '';
     const encodedPrompt = encodeURIComponent(prompt);
-    const apiUrl = `https://text.pollinations.ai/${encodedPrompt}?token=jpeqKMnAtaTE0GCO`;
+    const params = new URLSearchParams();
+    if (apiKey) params.append('key', apiKey);
+    params.append('model', model);
+    const apiUrl = `https://enter.pollinations.ai/api/generate/text/${encodedPrompt}?${params.toString()}`;
     
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json',
+        'Accept': 'text/plain',
         'Cache-Control': 'no-cache'
       },
     });
@@ -130,35 +136,63 @@ async function generateAIEnhancedData(prompt: string, imageUrl: string): Promise
 
     const result = await response.text();
     
-    // Try to parse as JSON, fallback to text
+    // Try to parse as JSON
     try {
-      return JSON.parse(result);
-    } catch {
-      // If not JSON, create a structured response from text
-      const impactScore = Math.floor(Math.random() * 100);
-      const category = impactScore > 80 ? "excellent" : impactScore > 60 ? "good" : impactScore > 40 ? "moderate" : "poor";
+      // Try to extract JSON from the response
+      let jsonText = result.trim();
       
-      // BULLETPROOF GENERATION - ALWAYS CREATIVE! 🏆
-      const shouldIncludeEnvironmentalData = Math.random() > 0.2; // 80% chance
+      // Remove markdown code blocks if present
+      if (jsonText.includes('```')) {
+        const jsonMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          jsonText = jsonMatch[1].trim();
+        }
+      }
       
-      // Creative and varied environmental data
-      const co2Equivalent = shouldIncludeEnvironmentalData ? 
-        Math.round((Math.random() * 8 + 0.1) * 10) / 10 : undefined; // 0.1 to 8.1 kg
+      // Try to find JSON object in the text
+      const jsonObjectMatch = jsonText.match(/\{[\s\S]*\}/);
+      if (jsonObjectMatch) {
+        const parsed = JSON.parse(jsonObjectMatch[0]);
+        
+        // Validate and structure the response
+        return {
+          impactScore: parsed.impactScore || Math.floor(Math.random() * 30 + 40),
+          category: parsed.category || (parsed.impactScore > 80 ? "excellent" : parsed.impactScore > 60 ? "good" : parsed.impactScore > 40 ? "moderate" : "poor"),
+          co2Equivalent: parsed.co2Equivalent !== undefined ? parsed.co2Equivalent : undefined,
+          waterUsage: parsed.waterUsage !== undefined ? parsed.waterUsage : undefined,
+          landfillYears: parsed.landfillYears,
+          recyclability: parsed.recyclability,
+          energyConsumption: parsed.energyConsumption,
+          microplasticsRisk: parsed.microplasticsRisk,
+          toxicityLevel: parsed.toxicityLevel,
+          composition: Array.isArray(parsed.composition) ? parsed.composition : generateBulletproofComposition(),
+          recommendations: Array.isArray(parsed.recommendations) && parsed.recommendations.length > 0 ? parsed.recommendations : generateCreativeRecommendations(),
+          disposalInstructions: parsed.disposalInstructions || generateCreativeDisposalInstructions(),
+          diyIdeas: Array.isArray(parsed.diyIdeas) ? parsed.diyIdeas : [
+            {
+              title: "Creative Upcycling Project",
+              description: "Transform this item into something beautiful and functional for your home or garden",
+              difficulty: "Easy",
+              materials: ["Basic tools", "Eco-friendly paint", "Natural adhesives"]
+            }
+          ]
+        };
+      }
       
-      const waterUsage = shouldIncludeEnvironmentalData ? 
-        Math.round(Math.random() * 500 + 10) : undefined; // 10 to 510 L
-      
-      // Use bulletproof composition generator
-      const composition = generateBulletproofComposition();
-      
-      // Generate creative impact score
+      // If no JSON found, throw to fallback
+      throw new Error("No JSON found in response");
+    } catch (parseError) {
+      console.log("Could not parse as JSON, using fallback:", parseError);
+      // Fallback to generated data
       const impact = generateCreativeImpact();
+      const composition = generateBulletproofComposition();
+      const shouldIncludeEnvironmentalData = Math.random() > 0.2;
       
       return {
         impactScore: impact.score,
         category: impact.description,
-        co2Equivalent,
-        waterUsage,
+        co2Equivalent: shouldIncludeEnvironmentalData ? Math.round((Math.random() * 8 + 0.1) * 10) / 10 : undefined,
+        waterUsage: shouldIncludeEnvironmentalData ? Math.round(Math.random() * 500 + 10) : undefined,
         composition,
         recommendations: generateCreativeRecommendations(),
         disposalInstructions: generateCreativeDisposalInstructions(),
@@ -202,19 +236,23 @@ async function generateAIEnhancedData(prompt: string, imageUrl: string): Promise
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = request.headers.get('x-user-id');
+    // Get user session from NextAuth
+    const session = await getServerSession(authOptions);
     
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID required' }, { status: 401 });
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const { prompt, imageUrl, analysisId } = await request.json();
+    const { prompt, imageUrl, analysisId, model } = await request.json();
     
     if (!prompt) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
     }
 
-    const aiData = await generateAIEnhancedData(prompt, imageUrl);
+    // Map model selection to actual API parameter
+    const apiModel = model === 'openai-gpt5' ? 'openai' : (model || 'openai');
+    
+    const aiData = await generateAIEnhancedData(prompt, imageUrl, apiModel);
     
     return NextResponse.json({ 
       success: true, 

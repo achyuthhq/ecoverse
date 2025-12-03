@@ -43,6 +43,10 @@ model User {
   profileShape        String?     @default("circle")
   source              String?
   goals               String?
+  /// Type of user: "individual", "industry", etc.
+  userType            String?
+  /// City used for shared impact metrics (users in same city share analytics)
+  city                String?
   subscriptionType    String?
   subscriptionExpires DateTime?
   accessCode          AccessCode?

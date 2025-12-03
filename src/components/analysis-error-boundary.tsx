@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { AlertCircle, RefreshCw, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button2";
 import Link from "next/link";
 
 interface AnalysisErrorBoundaryProps {

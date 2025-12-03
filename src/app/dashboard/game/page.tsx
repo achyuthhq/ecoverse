@@ -2,15 +2,16 @@
 
 import { Gamepad2, Maximize2 } from "lucide-react";
 import DashboardShell from "@/components/dashboard-shell";
-import { useCodeAuth } from "@/lib/auth-utils";
+import { useSession } from "next-auth/react";
 import ClassicLoader from "@/components/ui/classic-loader";
 
 export default function GamePage() {
-  const { user, isLoading } = useCodeAuth();
+  const { data: session, status } = useSession();
+  const user = session?.user;
 
-  if (isLoading) {
+  if (status === "loading") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0c0c0c' }}>
         <ClassicLoader size="lg" />
       </div>
     );
@@ -33,32 +34,32 @@ export default function GamePage() {
 
   return (
     <DashboardShell>
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6 pt-6 sm:pt-8 md:pt-4">
         {/* Header */}
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4">
             <div className="p-2 sm:p-3 bg-gradient-to-br from-green-400 to-green-600 rounded-xl sm:rounded-2xl shadow-lg">
               <Gamepad2 className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-green-500 to-green-400 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-white">
             Recycling Game
           </h1>
           </div>
-          <p className="text-gray-600 max-w-md mx-auto text-sm sm:text-base px-4">
+          <p className="text-gray-300 max-w-md mx-auto text-sm sm:text-base px-4">
             Test your recycling knowledge and learn about proper waste management through interactive gameplay.
           </p>
         </div>
 
         {/* Game Container */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
+        <div className="glass-card rounded-xl shadow-sm overflow-hidden">
+          <div className="p-6 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-full">
-                <Gamepad2 className="h-5 w-5 text-green-600" />
+              <div className="p-2 bg-green-500/20 rounded-full">
+                <Gamepad2 className="h-5 w-5 text-green-400" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Interactive Recycling Challenge</h2>
-                <p className="text-sm text-gray-600">Learn while you play and improve your eco-awareness</p>
+                <h2 className="text-lg font-semibold text-white">Interactive Recycling Challenge</h2>
+                <p className="text-sm text-gray-300">Learn while you play and improve your eco-awareness</p>
               </div>
             </div>
           </div>
@@ -85,34 +86,34 @@ export default function GamePage() {
         </div>
 
         {/* Game Instructions */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">How to Play</h3>
+        <div className="glass-card rounded-xl shadow-sm p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">How to Play</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <span className="text-green-600 font-semibold text-sm">1</span>
+              <div className="flex-shrink-0 w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                <span className="text-green-400 font-semibold text-sm">1</span>
               </div>
               <div>
-                <h4 className="font-medium text-gray-900">Start the Game</h4>
-                <p className="text-sm text-gray-600 mt-1">Click on the game area to begin your recycling challenge</p>
+                <h4 className="font-medium text-white">Start the Game</h4>
+                <p className="text-sm text-gray-300 mt-1">Click on the game area to begin your recycling challenge</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <span className="text-green-600 font-semibold text-sm">2</span>
+              <div className="flex-shrink-0 w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                <span className="text-green-400 font-semibold text-sm">2</span>
               </div>
               <div>
-                <h4 className="font-medium text-gray-900">Sort Items</h4>
-                <p className="text-sm text-gray-600 mt-1">Drag and drop items into the correct recycling bins</p>
+                <h4 className="font-medium text-white">Sort Items</h4>
+                <p className="text-sm text-gray-300 mt-1">Drag and drop items into the correct recycling bins</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <span className="text-green-600 font-semibold text-sm">3</span>
+              <div className="flex-shrink-0 w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                <span className="text-green-400 font-semibold text-sm">3</span>
               </div>
               <div>
-                <h4 className="font-medium text-gray-900">Learn & Improve</h4>
-                <p className="text-sm text-gray-600 mt-1">Discover proper recycling practices and improve your score</p>
+                <h4 className="font-medium text-white">Learn & Improve</h4>
+                <p className="text-sm text-gray-300 mt-1">Discover proper recycling practices and improve your score</p>
               </div>
             </div>
           </div>

@@ -20,9 +20,9 @@ declare global {
   }
 }
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button2";
+import { Input } from "@/components/ui/input2";
+import { Label } from "@/components/ui/label2";
 import { useToast } from "@/components/ui/use-toast";
 import { AlertCircle, Loader2, Eye, EyeOff, User, Mail } from "lucide-react";
 
@@ -208,22 +208,22 @@ export default function SignupPage() {
   // If already authenticated, show loading state
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 p-4">
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#0c0c0c' }}>
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-green-500" />
-          <p className="mt-2 text-gray-600">Loading...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-white" />
+          <p className="mt-2 text-white/70 font-montserrat">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#0c0c0c' }}>
       {/* Modern gradient background */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-green-500/20 blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-blue-500/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-b from-white/10 to-white/30 backdrop-blur-[120px]"></div>
+        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-white/10 blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-blue-500/10 blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-b from-white/5 to-white/10 backdrop-blur-[120px]"></div>
       </div>
       
       <div className="z-10 w-full max-w-md">
@@ -231,16 +231,16 @@ export default function SignupPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="glass-card-light rounded-3xl border border-white/30 shadow-2xl backdrop-blur-xl p-8 relative overflow-hidden"
+          className="glass-card rounded-3xl border border-white/20 shadow-2xl backdrop-blur-xl p-8 relative overflow-hidden"
         >
           {/* Decorative elements */}
-          <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-gradient-to-br from-green-500/10 to-emerald-500/10 blur-2xl"></div>
+          <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-gradient-to-br from-white/10 to-white/5 blur-2xl"></div>
           <div className="absolute -bottom-24 -left-24 w-48 h-48 rounded-full bg-gradient-to-tr from-blue-500/10 to-cyan-500/10 blur-2xl"></div>
 
           <div className="text-center mb-8 relative">
             <Link href="/">
               <div className="inline-flex items-center gap-1.5 mb-6 hover:scale-105 transition-transform">
-                <div className="p-0.5 rounded-full bg-gradient-to-br from-green-500 to-emerald-400 shadow-lg">
+                <div className="p-0.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 shadow-lg">
                     <Image 
                       src="/images/ecoverse.png" 
                       alt="Ecoverse Logo" 
@@ -249,20 +249,20 @@ export default function SignupPage() {
                       className="object-contain"
                     />
                 </div>
-                <span className={`${unbounded.className} text-xl font-medium bg-clip-text text-transparent bg-gradient-to-r from-green-500 via-emerald-400 to-green-400 tracking-wide`}>
+                <span className={`${unbounded.className} text-xl font-medium text-white tracking-wide`}>
                   Ecoverse
                 </span>
               </div>
             </Link>
-            <h1 className="text-2xl font-bold mb-2 text-gray-800">Create an Account</h1>
-            <p className="text-sm text-gray-600">
+            <h1 className="text-2xl font-bold mb-2 text-white font-montserrat">Create an Account</h1>
+            <p className="text-sm text-white/70 font-montserrat">
               Join Ecoverse to start your sustainability journey
             </p>
           </div>
 
           <form onSubmit={handleSignup} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm font-medium text-gray-700">Full Name</Label>
+              <Label htmlFor="name" className="text-sm font-medium text-white/90 font-montserrat">Full Name</Label>
               <div className="relative">
                 <Input
                   id="name"
@@ -271,15 +271,15 @@ export default function SignupPage() {
                   placeholder="John Doe"
                   value={formData.name}
                   onChange={handleChange}
-                  className={`bg-white/50 border-gray-200 rounded-xl pl-10 ${
-                    errors.name ? "border-red-500 focus:ring-red-200" : "focus:ring-green-200"
+                  className={`glass-card border border-white/20 bg-white/10 backdrop-blur-md text-white placeholder:text-white/50 rounded-xl pl-10 h-11 font-montserrat ${
+                    errors.name ? "border-red-500/50 focus:ring-red-500/30" : "focus:border-white/40 focus:ring-2 focus:ring-white/20"
                   }`}
                   required
                 />
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/60" />
               </div>
               {errors.name && (
-                <div className="text-red-500 text-xs flex items-center gap-1 mt-1">
+                <div className="text-red-400 text-xs flex items-center gap-1 mt-1 font-montserrat">
                   <AlertCircle className="h-3 w-3" />
                   {errors.name}
                 </div>
@@ -287,7 +287,7 @@ export default function SignupPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
+              <Label htmlFor="email" className="text-sm font-medium text-white/90 font-montserrat">Email</Label>
               <div className="relative">
                 <Input
                   id="email"
@@ -296,15 +296,15 @@ export default function SignupPage() {
                   placeholder="yourname@example.com"
                   value={formData.email}
                   onChange={handleChange}
-                  className={`bg-white/50 border-gray-200 rounded-xl pl-10 ${
-                    errors.email ? "border-red-500 focus:ring-red-200" : "focus:ring-green-200"
+                  className={`glass-card border border-white/20 bg-white/10 backdrop-blur-md text-white placeholder:text-white/50 rounded-xl pl-10 h-11 font-montserrat ${
+                    errors.email ? "border-red-500/50 focus:ring-red-500/30" : "focus:border-white/40 focus:ring-2 focus:ring-white/20"
                   }`}
                   required
                 />
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/60" />
               </div>
               {errors.email && (
-                <div className="text-red-500 text-xs flex items-center gap-1 mt-1">
+                <div className="text-red-400 text-xs flex items-center gap-1 mt-1 font-montserrat">
                   <AlertCircle className="h-3 w-3" />
                   {errors.email}
                 </div>
@@ -312,7 +312,7 @@ export default function SignupPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password</Label>
+              <Label htmlFor="password" className="text-sm font-medium text-white/90 font-montserrat">Password</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -321,15 +321,15 @@ export default function SignupPage() {
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={handleChange}
-                  className={`bg-white/50 border-gray-200 rounded-xl ${
-                    errors.password ? "border-red-500 focus:ring-red-200" : "focus:ring-green-200"
+                  className={`glass-card border border-white/20 bg-white/10 backdrop-blur-md text-white placeholder:text-white/50 rounded-xl pr-10 h-11 font-montserrat ${
+                    errors.password ? "border-red-500/50 focus:ring-red-500/30" : "focus:border-white/40 focus:ring-2 focus:ring-white/20"
                   }`}
                   required
                 />
                 <button
                   type="button"
                   onClick={togglePasswordVisibility}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white transition-colors"
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -339,7 +339,7 @@ export default function SignupPage() {
                 </button>
               </div>
               {errors.password && (
-                <div className="text-red-500 text-xs flex items-center gap-1 mt-1">
+                <div className="text-red-400 text-xs flex items-center gap-1 mt-1 font-montserrat">
                   <AlertCircle className="h-3 w-3" />
                   {errors.password}
                 </div>
@@ -348,7 +348,7 @@ export default function SignupPage() {
 
             <Button 
               type="submit" 
-              className="w-full bg-gradient-to-r from-green-500 via-emerald-400 to-green-400 hover:from-green-600 hover:to-green-500 text-white rounded-xl h-11 font-medium shadow-lg shadow-green-500/25 transition-all duration-200 hover:shadow-xl hover:shadow-green-500/30 hover:-translate-y-0.5"
+              className="w-full bg-white hover:bg-gray-100 text-gray-900 rounded-xl h-11 font-medium font-montserrat shadow-lg transition-all duration-200 hover:shadow-xl border-0"
               disabled={loading}
             >
               {loading ? (
@@ -363,9 +363,9 @@ export default function SignupPage() {
           </form>
 
           <div className="mt-8 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-white/80 font-montserrat">
               Already have an account?{" "}
-              <Link href="/auth/login" className="text-green-600 hover:text-green-700 hover:underline font-medium transition-colors">
+              <Link href="/auth/login" className="text-white hover:text-white/80 hover:underline font-medium transition-colors">
                 Sign in
               </Link>
             </p>

@@ -8,9 +8,9 @@ import Image from "next/image";
 import { z } from "zod";
 import { Unbounded } from "next/font/google";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button2";
+import { Input } from "@/components/ui/input2";
+import { Label } from "@/components/ui/label2";
 import { useToast } from "@/components/ui/use-toast";
 import { AlertCircle, Loader2, ArrowLeft } from "lucide-react";
 

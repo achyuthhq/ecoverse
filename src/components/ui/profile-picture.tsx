@@ -25,6 +25,13 @@ export default function ProfilePicture({
     xl: "w-32 h-32"
   };
 
+  const textSizeClasses = {
+    sm: "text-xs",
+    md: "text-sm",
+    lg: "text-base",
+    xl: "text-2xl"
+  };
+
   const shapeClasses = {
     circle: "rounded-full",
     square: "rounded-xl",
@@ -44,8 +51,8 @@ export default function ProfilePicture({
           className="object-cover w-full h-full"
         />
       ) : (
-        <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-          <span className="text-gray-400">
+        <div className="w-full h-full bg-gradient-to-br from-emerald-500/20 via-blue-500/20 to-purple-500/20 border-2 border-white/20 flex items-center justify-center backdrop-blur-sm">
+          <span className={`text-white/80 ${textSizeClasses[size]} font-semibold`}>
             {fallback}
           </span>
         </div>

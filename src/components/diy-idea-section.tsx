@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Leaf, AlertCircle, Sparkles } from "lucide-react";
 import DIYIdeaDisplay from "@/components/diy-idea-display";
 import RefreshDIYButton from "@/components/refresh-diy-button";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button2";
 
 interface DIYIdeaSectionProps {
   initialDiyIdea: string;

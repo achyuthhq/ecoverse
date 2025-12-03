@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Mic, Square, Loader2, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button2";
 import { useToast } from "@/components/ui/use-toast";
 
 interface VoiceRecorderProps {

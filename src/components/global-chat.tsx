@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button2";
 import { Textarea } from "@/components/ui/textarea";
 import { RefreshCw, Send, User, Bot, Leaf, X, MessageCircle } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -63,14 +63,14 @@ export default function GlobalChat() {
       Include relevant environmental facts when appropriate.`;
       
       // Use the Pollinations API directly
+      const apiKey = process.env.NEXT_PUBLIC_POLLINATIONS_API_KEY || '';
       const encodedPrompt = encodeURIComponent(prompt);
-      const apiUrl = `https://text.pollinations.ai/${encodedPrompt}`;
+      const apiUrl = `https://enter.pollinations.ai/api/generate/text/${encodedPrompt}${apiKey ? `?key=${apiKey}` : ''}`;
       
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
           'Accept': 'text/plain',
-          'Cache-Control': 'no-cache'
         }
       });
 

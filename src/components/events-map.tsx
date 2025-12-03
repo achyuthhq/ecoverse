@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Loader2, MapPin, Info } from "lucide-react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button2";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Types for recycling locations

@@ -34,7 +34,7 @@ import {
   Zap,
   Gamepad2
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button2";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 import UploadModal from "@/components/upload-modal";

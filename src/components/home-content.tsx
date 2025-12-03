@@ -2,14 +2,14 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/button2';
 import { motion } from 'framer-motion';
 
 export default function HomeContent() {
   return (
     <main className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-black via-gray-900 to-slate-900">
       {/* Decorative Circles */}
-      <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-green-500 opacity-10 blur-3xl"></div>
+      <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-white opacity-10 blur-3xl"></div>
       <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-blue-500 opacity-10 blur-3xl"></div>
       
       <div className="container px-4 py-16 mx-auto relative z-10">
@@ -21,7 +21,7 @@ export default function HomeContent() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-300 via-teal-400 to-blue-500 leading-tight mb-6">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
               AI-Powered Waste Management
             </h1>
             <p className="text-xl text-gray-300 max-w-xl mx-auto lg:mx-0 mb-8">
@@ -30,7 +30,7 @@ export default function HomeContent() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <Link href="/auth/login">
-                <Button size="lg" className="px-8 py-6 text-lg bg-gradient-to-r from-teal-500 to-green-500 hover:from-teal-600 hover:to-green-600 rounded-full glass-card shadow-lg shadow-teal-500/20">
+                <Button size="lg" className="px-8 py-6 text-lg bg-white hover:bg-gray-100 text-gray-900 rounded-full glass-card shadow-lg">
                   Get Started
                 </Button>
               </Link>
@@ -50,7 +50,7 @@ export default function HomeContent() {
             transition={{ duration: 0.8, delay: 0.2 }}
           >
             <div className="relative w-full aspect-square max-w-md mx-auto">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-green-500/20 to-blue-500/20 blur-xl"></div>
+              <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-white/20 to-white/10 blur-xl"></div>
               <div className="relative h-full w-full rounded-3xl overflow-hidden glass-dark">
                 <Image
                   src="/images/ecoverse-preview.png"

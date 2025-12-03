@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Sparkles, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button2";
 
 export default function EcoTipsSection() {
   const [tips, setTips] = useState([
@@ -34,14 +34,17 @@ export default function EcoTipsSection() {
       
       console.log("Fetching new tips...");
       
-      // Try different API endpoints
-      let response;
-      try {
-        response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}`);
-      } catch (fetchError) {
-        console.log("Primary API failed, trying alternative...");
-        response = await fetch(`https://api.pollinations.ai/text/${encodeURIComponent(prompt)}`);
-      }
+      // Use the new enter.pollinations.ai API
+      const apiKey = process.env.NEXT_PUBLIC_POLLINATIONS_API_KEY || '';
+      const encodedPrompt = encodeURIComponent(prompt);
+      const apiUrl = `https://enter.pollinations.ai/api/generate/text/${encodedPrompt}${apiKey ? `?key=${apiKey}` : ''}`;
+      
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'text/plain',
+        }
+      });
       
       if (!response.ok) {
         throw new Error(`Failed to fetch tips: ${response.status}`);
@@ -100,38 +103,35 @@ export default function EcoTipsSection() {
   };
 
   return (
-    <div className="bg-white/80 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-white/20">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-gradient-to-br from-teal-400 to-teal-600">
-            <Sparkles className="h-5 w-5 text-white" />
+    <div className="glass-card p-4 rounded-xl shadow-lg">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-gradient-to-br from-teal-400 to-teal-600">
+            <Sparkles className="h-4 w-4 text-white" />
           </div>
-          <h2 className="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 text-transparent bg-clip-text">
+          <h2 className="text-lg font-semibold text-white">
             Eco Tips
           </h2>
         </div>
         <Button
           onClick={fetchNewTips}
           disabled={isLoadingTips}
-          className="p-2 rounded-xl bg-gradient-to-br from-teal-400 to-teal-600 hover:from-teal-500 hover:to-teal-700 text-white shadow-lg transition-all duration-200 hover:scale-105"
+          className="p-1.5 rounded-lg bg-gradient-to-br from-teal-400 to-teal-600 hover:from-teal-500 hover:to-teal-700 text-white shadow-lg transition-all duration-200 hover:scale-105"
         >
           {isLoadingTips ? (
-            <RefreshCw className="h-4 w-4 animate-spin" />
+            <RefreshCw className="h-3 w-3 animate-spin" />
           ) : (
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className="h-3 w-3" />
           )}
         </Button>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {tips.map((tip, i) => (
-          <div key={i} className={`relative overflow-hidden p-6 rounded-2xl border backdrop-blur-sm bg-gradient-to-br ${tip.color} transition-all duration-300 hover:scale-[1.02] hover:shadow-lg`}>
-            {/* Glass effect overlay */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${tip.bgGradient} rounded-2xl`}></div>
-            
+          <div key={i} className="relative overflow-hidden p-4 rounded-xl glass-card transition-all duration-300 hover:scale-[1.01] hover:shadow-lg">
             {/* Content */}
             <div className="relative z-10">
-              <div className="text-3xl mb-3">{tip.icon}</div>
-              <p className="text-sm font-medium text-gray-700 leading-relaxed">{tip.tip}</p>
+              <div className="text-2xl mb-2">{tip.icon}</div>
+              <p className="text-xs font-medium text-white leading-relaxed">{tip.tip}</p>
             </div>
           </div>
         ))}

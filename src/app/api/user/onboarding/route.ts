@@ -9,7 +9,51 @@ import { Prisma } from '@prisma/client';
 const onboardingSchema = z.object({
   source: z.string().optional(),
   goals: z.string().optional(),
+  userType: z.enum(["individual", "industry"]),
+  city: z.string().min(1, "City is required"),
 });
+
+// GET: return current user's onboarding profile (for popup)
+export async function GET(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || !session.user?.id) {
+      return NextResponse.json(
+        { message: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        source: true,
+        goals: true,
+        userType: true,
+        city: true,
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { message: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ user }, { status: 200 });
+  } catch (error) {
+    console.error('Onboarding GET error:', error);
+    return NextResponse.json(
+      { message: 'Failed to load onboarding profile' },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -46,7 +90,7 @@ export async function POST(request: Request) {
       );
     }
     
-    const { source, goals } = result.data;
+    const { source, goals, userType, city } = result.data;
     
     // Update user with onboarding information
     const updatedUser = await prisma.user.update({
@@ -56,6 +100,8 @@ export async function POST(request: Request) {
       data: {
         source,
         goals,
+        userType,
+        city,
       },
     });
     
@@ -68,6 +114,8 @@ export async function POST(request: Request) {
           email: updatedUser.email,
           source: updatedUser.source,
           goals: updatedUser.goals,
+          userType: updatedUser.userType,
+          city: updatedUser.city,
         }
       },
       { status: 200 }

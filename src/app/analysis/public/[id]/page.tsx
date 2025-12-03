@@ -1,0 +1,262 @@
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import Image from "next/image";
+import { Clock, Leaf, Recycle, AlertTriangle, CheckCircle, Info, Download } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import ReadMoreText from "@/components/read-more-text";
+import Link from "next/link";
+
+export default async function PublicAnalysisPage({ params }: { params: { id: string } }) {
+  const analysis = await prisma.analysis.findUnique({
+    where: { id: params.id },
+    include: {
+      user: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  if (!analysis) {
+    notFound();
+  }
+
+  // Parse JSON fields
+  const environmentalImpact = typeof analysis.environmentalImpact === 'string' 
+    ? JSON.parse(analysis.environmentalImpact || '[]') 
+    : (Array.isArray(analysis.environmentalImpact) ? analysis.environmentalImpact : []);
+  
+  const harms = typeof analysis.harms === 'string' 
+    ? JSON.parse(analysis.harms || '[]') 
+    : (Array.isArray(analysis.harms) ? analysis.harms : []);
+  
+  const disposal = typeof analysis.disposal === 'string' 
+    ? JSON.parse(analysis.disposal || '[]') 
+    : (Array.isArray(analysis.disposal) ? analysis.disposal : []);
+  
+  const alternatives = typeof analysis.alternatives === 'string' 
+    ? JSON.parse(analysis.alternatives || '[]') 
+    : (Array.isArray(analysis.alternatives) ? analysis.alternatives : []);
+  
+  const recommendations = typeof analysis.recommendations === 'string' 
+    ? JSON.parse(analysis.recommendations || '{}') 
+    : (analysis.recommendations || {});
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="p-3 rounded-full glass-card border border-white/10">
+              <Leaf className="h-6 w-6 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold text-white font-montserrat">
+              Ecoverse
+            </h1>
+          </div>
+          <h2 className="text-2xl font-semibold text-white mb-2 font-montserrat">
+            Environmental Analysis Report
+          </h2>
+          <p className="text-gray-400 font-montserrat">
+            Shared Analysis
+          </p>
+          <div className="mt-4">
+            <a
+              href={`/api/analysis/${params.id}/pdf`}
+              target="_blank"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-900 hover:bg-gray-100 rounded-lg font-medium transition-colors text-sm"
+            >
+              <Download className="h-4 w-4" />
+              Download PDF
+            </a>
+          </div>
+        </div>
+
+        {/* Analysis Card */}
+        <div className="glass-card rounded-2xl shadow-2xl overflow-hidden border border-white/10">
+          <div className="p-6 md:p-8">
+            {/* Image and Basic Info */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="md:col-span-1">
+                <div className="aspect-square rounded-xl overflow-hidden border border-white/10 mb-4">
+                  <Image 
+                    src={analysis.imageUrl} 
+                    alt={analysis.label || "Analysis image"} 
+                    width={500} 
+                    height={500} 
+                    className="object-cover w-full h-full"
+                  />
+                </div>
+                
+                <h2 className="text-xl font-semibold text-white mb-2 font-montserrat">
+                  <ReadMoreText 
+                    text={analysis.label} 
+                    wordCount={8}
+                    textClassName="text-white font-semibold"
+                    buttonClassName="text-white/60 hover:text-white"
+                  />
+                </h2>
+                
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <Badge variant="outline" className="glass-card text-gray-300 border-gray-500/30">
+                    {analysis.type || "Unknown material"}
+                  </Badge>
+                  <Badge variant="outline" className="glass-card text-blue-300 border-blue-500/30">
+                    {analysis.category || "Uncategorized"}
+                  </Badge>
+                </div>
+                
+                <div className="flex items-center text-sm text-gray-300 mb-4">
+                  <Clock className="h-4 w-4 mr-1" />
+                  <span>Analyzed on {new Date(analysis.createdAt).toLocaleDateString()}</span>
+                </div>
+
+                {/* Creator Info */}
+                <div className="mt-4 pt-4 border-t border-white/10">
+                  <p className="text-xs text-gray-400 mb-1">Generated by</p>
+                  <p className="text-sm font-medium text-white">
+                    {analysis.user?.name || analysis.user?.email || "Anonymous"}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Analysis Details */}
+              <div className="md:col-span-2 space-y-6">
+                {/* Degradability */}
+                <div className="glass-card rounded-xl p-4 border border-white/10">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Leaf className="h-5 w-5 text-gray-400" />
+                    <h3 className="text-lg font-semibold text-white font-montserrat">Degradability</h3>
+                  </div>
+                  <p className="text-gray-300">{analysis.degradability || "Not specified"}</p>
+                </div>
+
+                {/* Environmental Impact */}
+                {environmentalImpact.length > 0 && (
+                  <div className="glass-card rounded-xl p-4 border border-white/10">
+                    <div className="flex items-center gap-3 mb-3">
+                      <AlertTriangle className="h-5 w-5 text-yellow-400" />
+                      <h3 className="text-lg font-semibold text-white font-montserrat">Environmental Impact</h3>
+                    </div>
+                    <ul className="space-y-2">
+                      {environmentalImpact.map((impact: string, index: number) => (
+                        <li key={index} className="flex items-start gap-2 text-gray-300">
+                          <span className="text-yellow-400 mt-1">•</span>
+                          <span>{impact}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Harms */}
+                {harms.length > 0 && (
+                  <div className="glass-card rounded-xl p-4 border border-white/10">
+                    <div className="flex items-center gap-3 mb-3">
+                      <AlertTriangle className="h-5 w-5 text-red-400" />
+                      <h3 className="text-lg font-semibold text-white font-montserrat">Health Risks</h3>
+                    </div>
+                    <ul className="space-y-2">
+                      {harms.map((harm: string, index: number) => (
+                        <li key={index} className="flex items-start gap-2 text-gray-300">
+                          <span className="text-red-400 mt-1">•</span>
+                          <span>{harm}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Disposal Instructions */}
+                {disposal.length > 0 && (
+                  <div className="glass-card rounded-xl p-4 border border-white/10">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Recycle className="h-5 w-5 text-blue-400" />
+                      <h3 className="text-lg font-semibold text-white font-montserrat">Disposal Instructions</h3>
+                    </div>
+                    <ul className="space-y-2">
+                      {disposal.map((instruction: string, index: number) => (
+                        <li key={index} className="flex items-start gap-2 text-gray-300">
+                          <span className="text-blue-400 mt-1">•</span>
+                          <span>{instruction}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Alternatives */}
+                {alternatives.length > 0 && (
+                  <div className="glass-card rounded-xl p-4 border border-white/10">
+                    <div className="flex items-center gap-3 mb-3">
+                      <CheckCircle className="h-5 w-5 text-green-400" />
+                      <h3 className="text-lg font-semibold text-white font-montserrat">Eco-Friendly Alternatives</h3>
+                    </div>
+                    <ul className="space-y-2">
+                      {alternatives.map((alternative: string, index: number) => (
+                        <li key={index} className="flex items-start gap-2 text-gray-300">
+                          <span className="text-green-400 mt-1">•</span>
+                          <span>{alternative}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Recommendations */}
+                {recommendations && typeof recommendations === 'object' && Object.keys(recommendations).length > 0 && (
+                  <div className="glass-card rounded-xl p-4 border border-white/10">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Info className="h-5 w-5 text-purple-400" />
+                      <h3 className="text-lg font-semibold text-white font-montserrat">Recommendations</h3>
+                    </div>
+                    <div className="space-y-3">
+                      {recommendations.reduce && (
+                        <div>
+                          <p className="text-sm font-medium text-white mb-1">Reduce</p>
+                          <p className="text-gray-300 text-sm">{recommendations.reduce}</p>
+                        </div>
+                      )}
+                      {recommendations.reuse && (
+                        <div>
+                          <p className="text-sm font-medium text-white mb-1">Reuse</p>
+                          <p className="text-gray-300 text-sm">{recommendations.reuse}</p>
+                        </div>
+                      )}
+                      {recommendations.recycle && (
+                        <div>
+                          <p className="text-sm font-medium text-white mb-1">Recycle</p>
+                          <p className="text-gray-300 text-sm">{recommendations.recycle}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Potential for Reuse */}
+                {analysis.potentialForReuse && (
+                  <div className="glass-card rounded-xl p-4 border border-white/10">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Recycle className="h-5 w-5 text-green-400" />
+                      <h3 className="text-lg font-semibold text-white font-montserrat">Reuse Potential</h3>
+                    </div>
+                    <p className="text-gray-300">{analysis.potentialForReuse}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-8 text-gray-400 text-sm font-montserrat">
+          <p>Powered by Ecoverse - Environmental Analysis Platform</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+

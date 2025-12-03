@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Trophy, Medal, Award, Users, Zap, Target } from "lucide-react";
 
 import DashboardShell from "@/components/dashboard-shell";
@@ -36,23 +36,19 @@ interface LeaderboardUser {
 }
 
 export default function LeaderboardPage() {
-  const [user, setUser] = useState<User | null>(null);
+  const { data: session, status } = useSession();
   const [leaderboardUsers, setLeaderboardUsers] = useState<LeaderboardUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
-    // Check for user session
-    const userSession = localStorage.getItem("userSession");
-    if (!userSession) {
-      router.push("/auth/code-login");
+    if (status === "loading") return;
+    
+    if (!session?.user) {
       return;
     }
 
-    const userData = JSON.parse(userSession);
-    setUser(userData);
     loadLeaderboardData();
-  }, [router]);
+  }, [session, status]);
 
   const loadLeaderboardData = async () => {
     try {
@@ -76,11 +72,19 @@ export default function LeaderboardPage() {
     );
   }
 
-  if (!user) return null;
+  if (status === "loading" || isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-50 flex items-center justify-center">
+        <ClassicLoader size="lg" />
+      </div>
+    );
+  }
+
+  if (!session?.user) return null;
 
   return (
     <DashboardShell>
-      <div className="flex flex-col gap-6 relative">
+      <div className="flex flex-col gap-6 pt-6 sm:pt-8 md:pt-4 relative">
         {/* Background gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-blue-50 -z-10 rounded-xl opacity-50" />
         
@@ -90,7 +94,7 @@ export default function LeaderboardPage() {
             <div className="p-2 sm:p-3 bg-gradient-to-br from-green-400 to-green-600 rounded-xl sm:rounded-2xl shadow-lg">
               <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-green-500 to-green-400 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-white">
               Eco Champions Leaderboard
             </h1>
           </div>
@@ -100,27 +104,21 @@ export default function LeaderboardPage() {
         </div>
         
         {/* Leaderboard */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg overflow-hidden border border-white/20">
+        <div className="glass-card rounded-2xl shadow-lg overflow-hidden">
           <div className="p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-2 rounded-xl bg-gradient-to-br from-green-400 to-green-600">
                 <Target className="h-5 w-5 text-white" />
               </div>
-              <h2 className="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 text-transparent bg-clip-text">Top Eco Champions</h2>
+              <h2 className="text-xl font-semibold text-white">Top Eco Champions</h2>
             </div>
             
             <div className="space-y-4">
               {leaderboardUsers.map((user, index) => (
                 <div 
                   key={user.id}
-                  className={`relative overflow-hidden flex items-center p-4 rounded-2xl transition-all duration-300 hover:scale-[1.01] ${
-                    index < 3 
-                      ? "bg-gradient-to-br from-green-50/80 to-green-100/50 border border-green-200/50 backdrop-blur-sm" 
-                      : "bg-white/60 border border-gray-100/50 backdrop-blur-sm"
-                  }`}
+                  className="relative overflow-hidden flex items-center p-4 rounded-2xl transition-all duration-300 hover:scale-[1.01] glass-card"
                 >
-                  {/* Glass effect overlay */}
-                  <div className="absolute inset-0 bg-white/20 backdrop-blur-sm rounded-2xl"></div>
                   
                   {/* Content */}
                   <div className="relative z-10 flex items-center w-full">
@@ -139,7 +137,7 @@ export default function LeaderboardPage() {
                           <Medal className="h-4 w-4 text-white" />
                         </div>
                       ) : (
-                        <span className="text-lg font-semibold text-gray-500">{index + 1}</span>
+                        <span className="text-lg font-semibold text-gray-300">{index + 1}</span>
                       )}
                     </div>
                     
@@ -169,20 +167,20 @@ export default function LeaderboardPage() {
                     
                     {/* User info */}
                     <div className="ml-4 flex-1">
-                      <h3 className="font-semibold text-gray-900">{user.name || "Anonymous User"}</h3>
+                      <h3 className="font-semibold text-white">{user.name || "Anonymous User"}</h3>
                       <div className="flex items-center gap-2 mt-1">
-                        <Zap className="h-3 w-3 text-blue-500" />
-                        <p className="text-sm text-gray-600">{user.analysisCount} analyses</p>
+                        <Zap className="h-3 w-3 text-blue-400" />
+                        <p className="text-sm text-gray-300">{user.analysisCount} analyses</p>
                       </div>
                     </div>
                     
                     {/* Eco awareness score badge */}
                     <div className="flex-shrink-0">
                       <div className={`px-4 py-2 rounded-xl text-sm font-semibold ${
-                        index === 0 ? "bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 border border-yellow-200" : 
-                        index === 1 ? "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border border-gray-200" : 
-                        index === 2 ? "bg-gradient-to-r from-orange-100 to-orange-200 text-orange-800 border border-orange-200" : 
-                        "bg-gradient-to-r from-green-50 to-green-100 text-green-700 border border-green-200"
+                        index === 0 ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" : 
+                        index === 1 ? "bg-white/10 text-gray-300 border border-white/20" : 
+                        index === 2 ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : 
+                        "bg-green-500/20 text-green-400 border border-green-500/30"
                       }`}>
                         {user.ecoAwarenessScore} pts
                       </div>

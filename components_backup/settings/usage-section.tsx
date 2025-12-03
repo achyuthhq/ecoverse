@@ -3,7 +3,7 @@
 import React from "react";
 import { BarChart3, Zap, CreditCard, Info } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button2";
 
 interface UsageSectionProps {
   analysesCount: number;

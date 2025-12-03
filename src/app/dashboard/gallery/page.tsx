@@ -7,7 +7,7 @@ import { Camera, Image as ImageIcon, Sparkles } from "lucide-react";
 import Image from "next/image";
 
 import DashboardShell from "@/components/dashboard-shell";
-import { useCodeAuth } from "@/lib/auth-utils";
+import { useSession } from "next-auth/react";
 import ClassicLoader from "@/components/ui/classic-loader";
 
 interface Analysis {
@@ -20,12 +20,13 @@ interface Analysis {
 }
 
 export default function GalleryPage() {
-  const { user, isLoading } = useCodeAuth();
+  const { data: session, status } = useSession();
+  const user = session?.user;
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       loadAnalyses();
     }
   }, [user]);
@@ -44,9 +45,9 @@ export default function GalleryPage() {
     }
   };
 
-  if (isLoading || loading) {
+  if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0c0c0c' }}>
         <ClassicLoader size="lg" />
       </div>
     );
@@ -56,7 +57,7 @@ export default function GalleryPage() {
 
   return (
     <DashboardShell>
-      <div className="flex flex-col gap-6 relative">
+      <div className="flex flex-col gap-6 pt-6 sm:pt-8 md:pt-4 relative">
         {/* Background gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-blue-50 -z-10 rounded-xl opacity-50" />
         
@@ -66,17 +67,17 @@ export default function GalleryPage() {
             <div className="p-2 sm:p-3 bg-gradient-to-br from-green-400 to-green-600 rounded-xl sm:rounded-2xl shadow-lg">
               <Camera className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-green-500 to-green-400 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-white">
               Your Gallery
             </h1>
           </div>
-          <p className="text-gray-600 max-w-md mx-auto text-sm sm:text-base px-4">
+          <p className="text-gray-300 max-w-md mx-auto text-sm sm:text-base px-4">
             A collection of your environmental analysis journey
           </p>
         </div>
         
         {/* Gallery Grid */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-6">
+        <div className="glass-card rounded-2xl shadow-lg p-6">
           {analyses.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {analyses.map((analysis, index) => (
@@ -87,7 +88,7 @@ export default function GalleryPage() {
                   transition={{ delay: index * 0.1 }}
                   className="relative group cursor-pointer"
                 >
-                  <div className="aspect-square rounded-xl overflow-hidden bg-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+                  <div className="aspect-square rounded-xl overflow-hidden glass-card shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105">
                     <Image
                       src={analysis.imageUrl}
                       alt={analysis.label}

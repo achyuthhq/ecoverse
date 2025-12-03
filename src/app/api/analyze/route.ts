@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import FormData from "form-data";
 import axios from "axios";
@@ -9,36 +11,36 @@ const IMGBB_API_KEY = "0614a461e2fe444df055e2f533490158";
 const IMGBB_API_URL = "https://api.imgbb.com/1/upload";
 
 // Pollinations API URL format
-const POLLINATIONS_API_URL = "https://text.pollinations.ai/";
+const POLLINATIONS_API_URL = "https://enter.pollinations.ai/api/generate/text/";
+const POLLINATIONS_API_KEY = process.env.POLLINATIONS_API_KEY || '';
 
 export async function POST(request: NextRequest) {
   try {
-    // Get user ID from request headers (sent by frontend)
-    const userId = request.headers.get('x-user-id');
+    // Get user session from NextAuth
+    const session = await getServerSession(authOptions);
     
-    // Debug: Log headers
-    console.log("=== ANALYZE API DEBUG ===");
-    console.log("Request method:", request.method);
-    console.log("Request URL:", request.url);
-    console.log("All headers:", Object.fromEntries(request.headers.entries()));
-    console.log("x-user-id header:", userId);
-    console.log("Header exists check:", request.headers.has('x-user-id'));
-    
-    if (!userId) {
-      return NextResponse.json({ error: "User ID required" }, { status: 401 });
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
+    
+    const userId = session.user.id;
 
     const body = await request.json();
-    const { image } = body;
+    const { image, model } = body;
 
     if (!image) {
       return NextResponse.json({ error: "Image data is required" }, { status: 400 });
     }
 
-    console.log("Processing image...");
+    const selectedModel = model || 'openai';
+
+    console.log("[ANALYSIS_GEN] Starting image analysis process");
+    console.log("[ANALYSIS_GEN] User ID:", userId);
+    console.log("[ANALYSIS_GEN] Selected model:", selectedModel);
     
     // Step 1: Upload image to ImgBB to get a public URL
-    console.log("Uploading image to ImgBB...");
+    console.log("[ANALYSIS_GEN] Step 1: Uploading image to ImgBB...");
+    console.log("[ANALYSIS_GEN] Requesting:", IMGBB_API_URL);
     let imageUrl = "";
     let base64Image = image;
     
@@ -66,10 +68,10 @@ export async function POST(request: NextRequest) {
         // Validate URL format
         try {
           new URL(imageUrl); // This will throw if URL is invalid
-          console.log("Image uploaded successfully to ImgBB:", imageUrl);
+          console.log("[ANALYSIS_GEN] Image uploaded successfully to ImgBB:", imageUrl);
         } catch (e) {
           // If URL is invalid, use a placeholder
-          console.error("Invalid URL format received from ImgBB:", imageUrl);
+          console.error("[ANALYSIS_GEN] Invalid URL format received from ImgBB:", imageUrl);
           imageUrl = "https://placehold.co/400x300?text=Image+Unavailable";
         }
       } else {
@@ -77,7 +79,7 @@ export async function POST(request: NextRequest) {
       }
       
     } catch (uploadError) {
-      console.error("Error uploading to ImgBB:", uploadError);
+      console.error("[ANALYSIS_GEN] Error uploading to ImgBB:", uploadError);
       return NextResponse.json(
         { error: `Failed to upload image: ${uploadError instanceof Error ? uploadError.message : "Unknown error"}` },
         { status: 500 }
@@ -85,10 +87,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 2: Identify the waste item using Moondream API
-    console.log("Calling Moondream API for image analysis...");
+    console.log("[ANALYSIS_GEN] Step 2: Calling Moondream API for image analysis...");
     
     try {
       // Use our Moondream client library
+      console.log("[ANALYSIS_GEN] Requesting Moondream API for image caption...");
       const moondreamResponse = await moondream.caption({
         image: base64Image,
         length: "normal"
@@ -102,50 +105,82 @@ export async function POST(request: NextRequest) {
       const caption = moondreamResponse.caption;
       const requestId = moondreamResponse.request_id;
       
-      console.log("Caption:", caption);
-      console.log("Request ID:", requestId);
+      console.log("[ANALYSIS_GEN] Moondream caption received:", caption);
+      console.log("[ANALYSIS_GEN] Moondream request ID:", requestId);
       
       // Use the full caption as the label
       const topLabel = caption;
       
-      console.log("Detected label:", topLabel);
+      console.log("[ANALYSIS_GEN] Detected label:", topLabel);
       
-      // Step 3: Get eco-analysis using Pollinations API
-      console.log("Generating eco-analysis with Pollinations API...");
+      // Step 3: Get eco-analysis using Pollinations API - WAIT FOR IT
+      console.log("[ANALYSIS_GEN] Step 3: Generating eco-analysis with Pollinations API");
+      console.log("[ANALYSIS_GEN] Using model:", selectedModel);
+      console.log("[ANALYSIS_GEN] Requesting Pollinations API...");
       
-      // Create a default eco-analysis based on the detected item
-      const ecoData = {
-        item: topLabel,
-        caption: caption, // Store the full caption
-        category: determineCategoryFromItem(topLabel),
-        material: determineMaterialFromItem(topLabel),
-        degradability: "Pending assessment",
-        environmental_impact: [
-          `${topLabel.substring(0, 50)}... can contribute to waste accumulation if not properly disposed.`,
-          "May contain materials that take years to decompose naturally."
-        ],
-        harms: [
-          "Can contribute to landfill waste",
-          "May contain materials harmful to wildlife if improperly disposed"
-        ],
-        disposal: [
-          `Check local recycling guidelines for proper disposal of this item`,
-          "Consider reuse options before disposal"
-        ],
-        potential_for_reuse: "Medium - Could potentially be repurposed or upcycled",
-        alternatives: [
-          "Eco-friendly versions made from sustainable materials",
-          "Reusable alternatives that reduce waste"
-        ],
-        recommendations: {
-          reduce: `Consider if you really need to purchase new items or if existing ones can be reused.`,
-          reuse: `This item can often be repurposed for storage or other uses.`,
-          recycle: `Check if your local recycling program accepts this type of item.`
-        }
-      };
+      // Generate real AI analysis using the selected model
+      const pollinationsResponse = await analyzeWithPollinationsAPI(caption, selectedModel);
+      console.log("[ANALYSIS_GEN] Pollinations API response received, success:", pollinationsResponse.success);
       
-      // Step 4: Save the analysis to the database
-      console.log("Saving to database...");
+      let ecoData;
+      if (pollinationsResponse.success && pollinationsResponse.data) {
+        console.log("[ANALYSIS_GEN] Using AI-generated data from Pollinations API");
+        const p2Data = pollinationsResponse.data;
+        // Use AI-generated data
+        ecoData = {
+          item: topLabel,
+          caption: caption,
+          category: p2Data.category || determineCategoryFromItem(topLabel),
+          material: p2Data.detected || determineMaterialFromItem(topLabel),
+          degradability: p2Data.type || "Non-biodegradable",
+          environmental_impact: Array.isArray(p2Data.harms) ? p2Data.harms : (p2Data.harms ? [p2Data.harms] : [`${topLabel} can contribute to waste accumulation if not properly disposed.`]),
+          harms: Array.isArray(p2Data.harms) ? p2Data.harms : (p2Data.harms ? [p2Data.harms] : ["Can contribute to landfill waste"]),
+          disposal: Array.isArray(p2Data.disposal) ? p2Data.disposal : (p2Data.disposal ? [p2Data.disposal] : ["Check local recycling guidelines for proper disposal"]),
+          potential_for_reuse: p2Data.extra_notes || "Medium - Could potentially be repurposed or upcycled",
+          alternatives: Array.isArray(p2Data.eco_alternatives) ? p2Data.eco_alternatives : (p2Data.eco_alternatives ? [p2Data.eco_alternatives] : ["Eco-friendly versions made from sustainable materials"]),
+          recommendations: {
+            reduce: `Consider if you really need to purchase new items or if existing ones can be reused.`,
+            reuse: p2Data.extra_notes || `This item can often be repurposed for storage or other uses.`,
+            recycle: Array.isArray(p2Data.disposal) ? p2Data.disposal[0] : (p2Data.disposal || `Check if your local recycling program accepts this type of item.`)
+          }
+        };
+      } else {
+        // Fallback if API fails
+        console.warn("[ANALYSIS_GEN] Pollinations API failed, using fallback data");
+        console.warn("[ANALYSIS_GEN] API error:", pollinationsResponse.error);
+        ecoData = {
+          item: topLabel,
+          caption: caption,
+          category: determineCategoryFromItem(topLabel),
+          material: determineMaterialFromItem(topLabel),
+          degradability: "Non-biodegradable",
+          environmental_impact: [
+            `${topLabel} can contribute to waste accumulation if not properly disposed.`,
+            "May contain materials that take years to decompose naturally."
+          ],
+          harms: [
+            "Can contribute to landfill waste",
+            "May contain materials harmful to wildlife if improperly disposed"
+          ],
+          disposal: [
+            `Check local recycling guidelines for proper disposal of this item`,
+            "Consider reuse options before disposal"
+          ],
+          potential_for_reuse: "Medium - Could potentially be repurposed or upcycled",
+          alternatives: [
+            "Eco-friendly versions made from sustainable materials",
+            "Reusable alternatives that reduce waste"
+          ],
+          recommendations: {
+            reduce: `Consider if you really need to purchase new items or if existing ones can be reused.`,
+            reuse: `This item can often be repurposed for storage or other uses.`,
+            recycle: `Check if your local recycling program accepts this type of item.`
+          }
+        };
+      }
+      
+      // Step 4: Save the analysis to the database with AI-generated data
+      console.log("[ANALYSIS_GEN] Step 4: Saving to database with AI-generated data...");
       try {
         // Validate and fix the image URL
         const validImageUrl = validateAndFixImageUrl(imageUrl);
@@ -158,7 +193,7 @@ export async function POST(request: NextRequest) {
             userId: userId,
             imageUrl: validImageUrl,
             label: ecoData.item,
-            extraNotes: ecoData.caption, // Save the full caption as extra notes
+            extraNotes: ecoData.caption,
             type: ecoData.material,
             category: ecoData.category,
             degradability: ecoData.degradability,
@@ -171,55 +206,26 @@ export async function POST(request: NextRequest) {
           }
         });
         
-        console.log("Analysis created with ID:", analysis.id);
-        
-        // Start Pollinations API analysis in the background without waiting for it
-        analyzeWithPollinationsAPI(caption).then(pollinationsResponse => {
-          if (pollinationsResponse.success && pollinationsResponse.data) {
-            // Update the analysis with Pollinations API response if available
-            const p2Data = pollinationsResponse.data;
-            
-            try {
-              prisma.analysis.update({
-                where: { id: analysis.id },
-                data: {
-                  degradability: p2Data.type || ecoData.degradability,
-                  category: p2Data.category || ecoData.category,
-                  harms: p2Data.harms ? JSON.stringify(p2Data.harms) : JSON.stringify(ecoData.harms),
-                  disposal: p2Data.disposal ? JSON.stringify(p2Data.disposal) : JSON.stringify(ecoData.disposal),
-                  alternatives: p2Data.eco_alternatives ? JSON.stringify(p2Data.eco_alternatives) : JSON.stringify(ecoData.alternatives),
-                  potentialForReuse: p2Data.extra_notes || ecoData.potential_for_reuse
-                }
-              }).then(() => {
-                console.log("Analysis updated with Pollinations API data");
-              }).catch(updateError => {
-                console.error("Error updating analysis with Pollinations API data:", updateError);
-              });
-            } catch (updateError) {
-              console.error("Error updating analysis with Pollinations API data:", updateError);
-            }
-          }
-        }).catch(pollinationsError => {
-          console.error("Pollinations API analysis failed:", pollinationsError);
-        });
+        console.log("[ANALYSIS_GEN] Analysis created successfully with ID:", analysis.id);
+        console.log("[ANALYSIS_GEN] Analysis generation completed");
         
         return NextResponse.json({ success: true, id: analysis.id });
       } catch (dbError) {
-        console.error("Database error:", dbError);
+        console.error("[ANALYSIS_GEN] Database error:", dbError);
         return NextResponse.json(
           { error: "Failed to save analysis to database", details: String(dbError) },
           { status: 500 }
         );
       }
     } catch (apiError) {
-      console.error("API processing error:", apiError);
+      console.error("[ANALYSIS_GEN] API processing error:", apiError);
       return NextResponse.json(
         { error: "API processing failed", details: String(apiError) },
         { status: 500 }
       );
     }
   } catch (error) {
-    console.error("Error analyzing image:", error);
+    console.error("[ANALYSIS_GEN] Error analyzing image:", error);
     return NextResponse.json(
       { error: "Failed to analyze image" },
       { status: 500 }
@@ -293,7 +299,7 @@ function validateAndFixImageUrl(url: string): string {
 }
 
 // Function to analyze objects using Pollinations API
-async function analyzeWithPollinationsAPI(detectedObject: string) {
+async function analyzeWithPollinationsAPI(detectedObject: string, model: string = 'openai') {
   try {
     // Extract the main waste item from the caption for better analysis
     const wasteItems = [
@@ -315,39 +321,50 @@ async function analyzeWithPollinationsAPI(detectedObject: string) {
       }
     }
     
-    const promptTemplate = `
-Detected in image: ${detectedObject}
+    const promptTemplate = `You are an expert environmental analyst. Analyze this waste item for comprehensive environmental impact assessment.
 
-Main item appears to be: ${mainItem}
+**Detected Item:** ${detectedObject}
+**Main Item:** ${mainItem}
 
------
-
-Please analyze this item for waste management and environmental impact:
-
-1. Object identification: What is the main waste item in this description?
-2. Material type: What material is it made of? (plastic, metal, paper, etc.)
-3. Biodegradability: Is it biodegradable or non-biodegradable?
-4. Category: What waste category does it belong to? (recyclable, hazardous, etc.)
-5. Environmental impact: How does this item impact the environment?
-6. Proper disposal: How should this item be disposed of correctly?
-7. Alternatives: What are some eco-friendly alternatives?
-
-Format your response as a JSON object with these fields:
+Provide a detailed analysis in JSON format with these exact fields:
 {
   "detected": "${mainItem}",
-  "type": "biodegradable or non-biodegradable",
-  "category": "waste category",
-  "harms": ["environmental impact 1", "environmental impact 2", "environmental impact 3"],
-  "disposal": ["disposal instruction 1", "disposal instruction 2"],
-  "eco_alternatives": ["alternative 1", "alternative 2"],
-  "extra_notes": "Additional information about handling or recycling"
+  "type": "biodegradable" or "non-biodegradable" (be specific about degradation time if known),
+  "category": "Recyclable", "Compostable", "Hazardous Waste", "E-Waste", "Reusable/Donatable", "Repurposable", or "Recyclable Mixed",
+  "harms": [
+    "Specific environmental impact 1 (e.g., contributes to microplastic pollution)",
+    "Specific environmental impact 2 (e.g., takes 450 years to decompose)",
+    "Specific environmental impact 3 (e.g., harms marine life if not disposed properly)"
+  ],
+  "disposal": [
+    "Step-by-step disposal instruction 1 (be specific)",
+    "Step-by-step disposal instruction 2 (be specific)",
+    "Step-by-step disposal instruction 3 (be specific)"
+  ],
+  "eco_alternatives": [
+    "Specific eco-friendly alternative 1 (e.g., reusable steel water bottle)",
+    "Specific eco-friendly alternative 2 (e.g., bamboo-based product)",
+    "Specific eco-friendly alternative 3 (e.g., glass container)"
+  ],
+  "extra_notes": "Detailed information about reuse potential, recycling tips, or special handling requirements"
 }
 
-Be concise but thorough.`;
+IMPORTANT: 
+- Return ONLY valid JSON, no markdown code blocks
+- Be specific and detailed, not generic
+- Base your analysis on the actual item: ${detectedObject}
+- Provide real, actionable information`;
 
-    // Use Pollinations API
+    // Use Pollinations API with selected model
     const encodedPrompt = encodeURIComponent(promptTemplate);
-    const apiUrl = `${POLLINATIONS_API_URL}${encodedPrompt}`;
+    const params = new URLSearchParams();
+    if (POLLINATIONS_API_KEY) params.append('key', POLLINATIONS_API_KEY);
+    params.append('model', model);
+    const apiUrl = `${POLLINATIONS_API_URL}${encodedPrompt}?${params.toString()}`;
+    
+    console.log("[ANALYSIS_GEN] Requesting Pollinations API:", apiUrl.substring(0, 100) + "...");
+    console.log("[ANALYSIS_GEN] Model parameter:", model);
+    console.log("[ANALYSIS_GEN] API key present:", !!POLLINATIONS_API_KEY);
     
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -357,36 +374,43 @@ Be concise but thorough.`;
       }
     });
 
+    console.log("[ANALYSIS_GEN] Pollinations API response status:", response.status);
     if (!response.ok) {
+      console.error("[ANALYSIS_GEN] Pollinations API request failed with status:", response.status);
       throw new Error(`API request failed with status ${response.status}`);
     }
 
     const responseText = await response.text();
+    console.log("[ANALYSIS_GEN] Pollinations API response received, length:", responseText.length);
 
     // Parse the response from Pollinations API
+    console.log("[ANALYSIS_GEN] Parsing Pollinations API response...");
     let parsedData;
     try {
       // Try to extract JSON from the response text
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         parsedData = JSON.parse(jsonMatch[0]);
+        console.log("[ANALYSIS_GEN] Successfully parsed JSON from Pollinations API response");
       } else {
+        console.error("[ANALYSIS_GEN] Could not extract JSON from response");
         parsedData = { error: "Could not extract JSON from response" };
       }
     } catch (parseError) {
-      console.error("Error parsing Pollinations API response:", parseError);
+      console.error("[ANALYSIS_GEN] Error parsing Pollinations API response:", parseError);
       return {
         success: false,
         error: "Failed to parse analysis response",
       };
     }
 
+    console.log("[ANALYSIS_GEN] Pollinations API analysis completed successfully");
     return {
       success: true,
       data: parsedData,
     };
   } catch (error) {
-    console.error("Pollinations API error:", error);
+    console.error("[ANALYSIS_GEN] Pollinations API error:", error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : "Unknown error" 

@@ -17,7 +17,8 @@ export const authOptions: NextAuthOptions = {
     signOut: "/auth/logout",
     error: "/auth/error",
     verifyRequest: "/auth/verify",
-    newUser: "/onboarding",
+    // New users will land on the dashboard, which now shows a city onboarding popup
+    newUser: "/dashboard",
   },
   providers: [
     GoogleProvider({

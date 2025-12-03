@@ -2,26 +2,28 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import ClassicLoader from "@/components/ui/classic-loader";
 
 export default function Home() {
   const router = useRouter();
+  const { data: session, status } = useSession();
 
   useEffect(() => {
-    // Check for existing user session
-    const userSession = localStorage.getItem("userSession");
-    if (userSession) {
+    if (status === "loading") return; // Still loading
+
+    if (session) {
       // User is already logged in, redirect to dashboard
       router.push("/dashboard");
     } else {
-      // No session, redirect to code login
-      router.push("/auth/code-login");
+      // No session, redirect to login
+      router.push("/auth/login");
     }
-  }, [router]);
+  }, [session, status, router]);
 
   // Show loading while checking session
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-50 flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0c0c0c' }}>
       <ClassicLoader size="lg" />
     </div>
   );

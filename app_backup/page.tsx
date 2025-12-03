@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/button2';
 import { motion } from 'framer-motion';
 
 export default async function Home() {

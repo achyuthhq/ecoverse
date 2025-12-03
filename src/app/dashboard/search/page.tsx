@@ -8,9 +8,9 @@ import { Search, Clock, ArrowRight, Filter, Sparkles, Zap, Target, X } from "luc
 import { motion, AnimatePresence } from "framer-motion";
 
 import DashboardShell from "@/components/dashboard-shell";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useCodeAuth } from "@/lib/auth-utils";
+import { Input } from "@/components/ui/input2";
+import { Button } from "@/components/ui/button2";
+import { useSession } from "next-auth/react";
 import ClassicLoader from "@/components/ui/classic-loader";
 
 interface Analysis {
@@ -23,7 +23,8 @@ interface Analysis {
 }
 
 export default function SearchPage() {
-  const { user, isLoading: authLoading } = useCodeAuth();
+  const { data: session, status } = useSession();
+  const user = session?.user;
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
@@ -96,7 +97,7 @@ export default function SearchPage() {
     { key: "e-waste", label: "E-Waste", icon: "📱" }
   ];
 
-  if (authLoading || isLoading) {
+  if (status === "loading" || isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-50 flex items-center justify-center">
         <ClassicLoader size="lg" />
@@ -108,111 +109,106 @@ export default function SearchPage() {
 
   return (
     <DashboardShell>
-      <div className="flex flex-col gap-6 relative">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-blue-50 -z-10 rounded-xl opacity-50" />
-        
+      <div className="flex flex-col gap-6 pt-6 sm:pt-8 md:pt-4">
         {/* Header */}
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4">
-            <div className="p-2 sm:p-3 bg-gradient-to-br from-green-400 to-green-600 rounded-xl sm:rounded-2xl shadow-lg">
+            <div className="p-2 sm:p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl sm:rounded-2xl shadow-lg">
               <Search className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-green-500 to-green-400 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-white">
               Search Analyses
             </h1>
           </div>
-          <p className="text-gray-600 max-w-md mx-auto text-sm sm:text-base px-4">
+          <p className="text-gray-300 max-w-md mx-auto text-sm sm:text-base px-4">
             Find and explore your previous waste analysis results
           </p>
         </div>
 
         {/* Search Form - Modern Glass UI */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 p-8">
-          <div className="relative">
+        <div className="glass-card rounded-2xl shadow-lg border border-white/10 backdrop-blur-xl p-6 sm:p-8 bg-[#0c0c0c]">
+          <div className="space-y-6">
             {/* Search Input */}
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60 z-10" />
               <Input 
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by item name, material type, or category..."
-                className="pl-12 pr-12 py-4 w-full border-gray-200 focus:border-green-300 focus:ring-2 focus:ring-green-200 focus:ring-opacity-50 rounded-2xl text-lg bg-white/90 backdrop-blur-sm"
+                className="pl-12 pr-12 py-3 sm:py-4 w-full rounded-xl text-base sm:text-lg bg-[#111111] border-white/10 text-white placeholder:text-gray-500 focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20"
               />
               {searchQuery && (
                 <button
                   onClick={clearSearch}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 p-1.5 rounded-full hover:bg-white/10 transition-colors"
                 >
-                  <X className="h-4 w-4 text-gray-400" />
+                  <X className="h-4 w-4 text-gray-300" />
                 </button>
               )}
             </div>
 
             {/* Popular Searches */}
-            <div className="mt-6">
+            <div>
               <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="h-4 w-4 text-green-500" />
-                <p className="text-sm font-medium text-gray-700">Popular searches:</p>
+                <Sparkles className="h-4 w-4 text-emerald-400" />
+                <p className="text-sm font-medium text-white">Popular searches:</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 {popularSearches.map((term) => (
-                  <Button 
+                  <button
                     key={term} 
-                    variant="outline" 
-                    size="sm" 
                     onClick={() => setSearchQuery(term)}
-                    className="rounded-full bg-white/80 hover:bg-green-50 hover:text-green-600 hover:border-green-300 transition-all duration-200"
+                    className="px-4 py-1.5 rounded-full text-sm font-medium bg-white/5 hover:bg-emerald-500/20 hover:text-emerald-300 border border-white/10 hover:border-emerald-500/30 text-gray-300 transition-all duration-200"
                   >
                     {term}
-            </Button>
+                  </button>
                 ))}
-          </div>
-          </div>
+              </div>
+            </div>
 
             {/* Filter Options */}
-            <div className="mt-6">
+            <div>
               <div className="flex items-center gap-2 mb-3">
-                <Filter className="h-4 w-4 text-blue-500" />
-                <p className="text-sm font-medium text-gray-700">Filter by category:</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
+                <Filter className="h-4 w-4 text-blue-400" />
+                <p className="text-sm font-medium text-white">Filter by category:</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
                 {filterOptions.map((filter) => (
-                  <Button 
+                  <button
                     key={filter.key} 
-                    variant={selectedFilter === filter.key ? "default" : "outline"}
-                    size="sm" 
                     onClick={() => handleFilterClick(filter.key)}
-                    className={`rounded-full transition-all duration-200 ${
+                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
                       selectedFilter === filter.key 
-                        ? "bg-gradient-to-r from-green-500 to-green-400 text-white shadow-lg" 
-                        : "bg-white/80 hover:bg-green-50 hover:text-green-600 hover:border-green-300"
+                        ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-lg" 
+                        : "bg-white/5 hover:bg-emerald-500/10 hover:text-emerald-300 border border-white/10 hover:border-emerald-500/20 text-gray-300"
                     }`}
                   >
-                    <span className="mr-1">{filter.icon}</span>
+                    <span className="mr-1.5">{filter.icon}</span>
                     {filter.label}
-                </Button>
-              ))}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
         </div>
 
         {/* Search Results */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 overflow-hidden">
+        <div className="glass-card rounded-2xl shadow-lg border border-white/10 backdrop-blur-xl overflow-hidden bg-[#0c0c0c]">
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600">
-                  <Target className="h-5 w-5 text-white" />
+                <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/20 border border-blue-500/30">
+                  <Target className="h-5 w-5 text-blue-400" />
                 </div>
-                <h2 className="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 text-transparent bg-clip-text">
-                  {searchQuery ? `Search Results (${filteredAnalyses.length})` : "Recent Analyses"}
+                <h2 className="text-xl font-semibold text-white">
+                  {searchQuery || selectedFilter !== "all" 
+                    ? `Search Results (${filteredAnalyses.length})` 
+                    : "Recent Analyses"}
                 </h2>
               </div>
               {filteredAnalyses.length > 0 && (
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-gray-400">
                   {filteredAnalyses.length} {filteredAnalyses.length === 1 ? 'result' : 'results'}
                 </div>
               )}
@@ -234,50 +230,47 @@ export default function SearchPage() {
                       transition={{ delay: index * 0.1 }}
                     >
                       <Link href={`/dashboard/analysis/${analysis.id}`} className="block">
-                        <div className="relative overflow-hidden p-6 rounded-2xl bg-white/60 hover:bg-white/80 border border-gray-100 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] group">
-                          {/* Glass effect overlay */}
-                          <div className="absolute inset-0 bg-gradient-to-br from-green-50/30 to-blue-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
-                          
-                          <div className="relative z-10 flex items-center">
-                      {/* Thumbnail */}
-                            <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 border border-gray-200 shadow-sm">
-                        <Image 
-                          src={analysis.imageUrl} 
-                          alt={analysis.label || "Analysis"} 
+                        <div className="relative overflow-hidden p-4 sm:p-6 rounded-xl glass-card border border-white/10 hover:border-emerald-500/30 transition-all duration-300 hover:shadow-lg group bg-[#191919]">
+                          <div className="flex items-center gap-4">
+                            {/* Thumbnail */}
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden flex-shrink-0 border border-white/10">
+                              <Image 
+                                src={analysis.imageUrl} 
+                                alt={analysis.label || "Analysis"} 
                                 width={80} 
                                 height={80} 
-                          className="object-cover w-full h-full"
-                        />
-                      </div>
-                      
-                      {/* Details */}
-                            <div className="ml-6 flex-1 min-w-0">
-                              <h3 className="font-semibold text-gray-900 line-clamp-2 group-hover:text-green-700 transition-colors">
+                                className="object-cover w-full h-full"
+                              />
+                            </div>
+                            
+                            {/* Details */}
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-white line-clamp-2 group-hover:text-emerald-300 transition-colors">
                                 {analysis.label || "Unnamed Item"}
                               </h3>
                               <div className="flex items-center gap-2 mt-2 flex-wrap">
-                                <span className="text-xs px-3 py-1 bg-green-100 text-green-700 rounded-full font-medium">
-                            {analysis.type || "Unknown material"}
-                          </span>
-                                <span className="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-medium">
-                            {analysis.category || "Uncategorized"}
-                          </span>
-                                <span className="text-xs text-gray-500 flex items-center gap-1">
+                                <span className="text-xs px-2.5 py-1 bg-emerald-500/20 text-emerald-300 rounded-full font-medium border border-emerald-500/30">
+                                  {analysis.type || "Unknown material"}
+                                </span>
+                                <span className="text-xs px-2.5 py-1 bg-blue-500/20 text-blue-300 rounded-full font-medium border border-blue-500/30">
+                                  {analysis.category || "Uncategorized"}
+                                </span>
+                                <span className="text-xs text-gray-400 flex items-center gap-1">
                                   <Clock className="h-3 w-3" />
-                            {new Date(analysis.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {/* Action */}
-                      <div className="flex-shrink-0">
-                              <div className="p-2 rounded-xl bg-gradient-to-br from-green-500 to-green-400 text-white opacity-0 group-hover:opacity-100 transition-all duration-300">
+                                  {new Date(analysis.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            {/* Action */}
+                            <div className="flex-shrink-0">
+                              <div className="p-2 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 opacity-0 group-hover:opacity-100 transition-all duration-300">
                                 <ArrowRight className="h-4 w-4" />
                               </div>
                             </div>
-                      </div>
-                    </div>
-                  </Link>
+                          </div>
+                        </div>
+                      </Link>
                     </motion.div>
                 ))}
                 </motion.div>
@@ -285,28 +278,28 @@ export default function SearchPage() {
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="text-center py-16"
+                  className="text-center py-12 sm:py-16"
                 >
-                  <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center mb-6">
+                  <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-500/20 to-gray-600/20 border border-white/10 flex items-center justify-center mb-6">
                     <Search className="h-8 w-8 text-gray-400" />
-                </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    {searchQuery ? "No results found" : "No analyses yet"}
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-2">
+                    {searchQuery || selectedFilter !== "all" ? "No results found" : "No analyses yet"}
                   </h3>
-                  <p className="text-gray-500 max-w-md mx-auto mb-6">
-                    {searchQuery 
+                  <p className="text-gray-400 max-w-md mx-auto mb-6">
+                    {searchQuery || selectedFilter !== "all"
                       ? "Try adjusting your search terms or filters"
                       : "Upload an item to analyze and it will appear in your history"
                     }
-                </p>
-                  {!searchQuery && (
+                  </p>
+                  {!searchQuery && selectedFilter === "all" && (
                     <Link href="/dashboard">
-                      <Button className="bg-gradient-to-r from-green-500 to-green-400 hover:from-green-600 hover:to-green-500 rounded-xl shadow-lg">
+                      <Button className="bg-white text-[#0c0c0c] hover:bg-gray-100 rounded-lg px-6 py-2 font-medium">
                         <Zap className="h-4 w-4 mr-2" />
                         Upload First Item
                       </Button>
                     </Link>
-            )}
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>

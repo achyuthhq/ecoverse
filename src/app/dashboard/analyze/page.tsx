@@ -10,15 +10,15 @@ export default function AnalyzePage() {
       title="Analyze" 
       description="Upload an image to get AI-powered environmental analysis"
     >
-      <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-6">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-teal-600 shadow-lg">
-              <Camera className="h-8 w-8 text-white" />
+      <div className="glass-card rounded-xl shadow-lg p-4">
+        <div className="text-center mb-4">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-green-500 to-teal-600 shadow-lg">
+              <Camera className="h-4 w-4 text-white" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">AI Analysis</h2>
+            <h2 className="text-lg font-semibold text-white">AI Analysis</h2>
           </div>
-          <p className="text-gray-600">
+          <p className="text-gray-300 text-xs">
             Upload an image to get instant environmental analysis and eco-friendly recommendations.
           </p>
         </div>

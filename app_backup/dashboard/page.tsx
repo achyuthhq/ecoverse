@@ -6,7 +6,7 @@ import Link from "next/link";
 
 import DashboardShell from "@/components/dashboard-shell";
 import ImageUpload from "@/components/image-upload";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button2";
 import AnalysisHistory from "@/components/analysis-history";
 import { prisma } from "@/lib/prisma";
 

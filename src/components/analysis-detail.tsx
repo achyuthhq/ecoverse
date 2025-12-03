@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, AlertTriangle, Recycle, Leaf, Info, ChevronDown, ChevronUp } from "lucide-react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button2";
 import DashboardShell from "@/components/dashboard-shell";
 import { formatDate } from "@/lib/utils";
 import { useState } from "react";

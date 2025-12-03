@@ -1,14 +1,17 @@
 import React from "react";
 import "./globals.css";
 import type { Metadata } from "next";
-import { Inter, Unbounded } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import AuthProvider from "@/components/auth-provider";
 import { cn } from "@/lib/utils";
 
-const inter = Inter({ subsets: ['latin'] });
-const unbounded = Unbounded({ subsets: ['latin'] });
+const montserrat = Montserrat({ 
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-montserrat',
+});
 
 export const metadata: Metadata = {
   title: 'Ecoverse - AI-Powered Waste Management',
@@ -34,11 +37,12 @@ export default function RootLayout({
           crossOrigin=""
         />
       </head>
-      <body className={cn("min-h-screen bg-background font-sans antialiased", inter.className)}>
+      <body className={cn("min-h-screen bg-background font-sans antialiased", montserrat.className)}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="dark"
+          forcedTheme="dark"
+          enableSystem={false}
           disableTransitionOnChange
         >
           <AuthProvider>

@@ -65,9 +65,10 @@ function isValidBiodegradabilityResponse(text: string): boolean {
 // Enhanced retry logic with validation - for full environmental analysis
 async function fetchWithEnhancedRetry(prompt: string, isInitialAnalysis: boolean = false, retries = 2): Promise<string> {
   try {
-    // Use the correct URL format for the Pollinations API
+    // Use the new enter.pollinations.ai API
+    const apiKey = process.env.POLLINATIONS_API_KEY || '';
     const encodedPrompt = encodeURIComponent(prompt);
-    const apiUrl = `https://text.pollinations.ai/${encodedPrompt}`;
+    const apiUrl = `https://enter.pollinations.ai/api/generate/text/${encodedPrompt}${apiKey ? `?key=${apiKey}` : ''}`;
     
     const response = await fetch(apiUrl, {
       method: 'GET',

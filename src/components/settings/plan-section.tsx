@@ -18,9 +18,11 @@ import {
 
 interface User {
   id: string;
-  name: string;
-  subscriptionType: string;
-  subscriptionExpires?: string;
+  // Name can be null/undefined from auth providers
+  name?: string | null;
+  // Subscription fields may not be set for new/free users
+  subscriptionType?: string | null;
+  subscriptionExpires?: string | null;
 }
 
 interface PlanSectionProps {
@@ -55,23 +57,25 @@ export default function PlanSection({ user, analysesCount }: PlanSectionProps) {
   return (
     <div className="space-y-6">
       {/* Current Plan Card */}
-      <Card className="p-6 border border-gray-100 shadow-sm rounded-xl overflow-hidden">
+      <Card className="glass-card p-6 border border-white/10 shadow-lg rounded-xl overflow-hidden backdrop-blur-xl bg-[#0c0c0c]">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className={`p-3 rounded-xl ${
               isLifetime 
-                ? "bg-gradient-to-br from-purple-500 to-purple-600" 
+                ? "bg-gradient-to-br from-purple-500/20 to-purple-600/20 border border-purple-500/30" 
                 : isExpired
-                ? "bg-gradient-to-br from-red-500 to-red-600"
-                : "bg-gradient-to-br from-green-500 to-green-600"
+                ? "bg-gradient-to-br from-red-500/20 to-red-600/20 border border-red-500/30"
+                : "bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 border border-emerald-500/30"
             } shadow-lg`}>
-              <Crown className="h-6 w-6 text-white" />
+              <Crown className={`h-6 w-6 ${
+                isLifetime ? "text-purple-400" : isExpired ? "text-red-400" : "text-emerald-400"
+              }`} />
             </div>
             <div>
-              <h3 className="text-xl font-semibold text-gray-900">
+              <h3 className="text-xl font-semibold text-white">
                 {isLifetime ? "Lifetime Plan" : "Monthly Plan"}
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-400">
                 {isLifetime ? "Unlimited access forever" : "Monthly subscription"}
               </p>
             </div>
@@ -80,10 +84,10 @@ export default function PlanSection({ user, analysesCount }: PlanSectionProps) {
             variant={isLifetime ? "default" : isExpired ? "destructive" : "secondary"}
             className={`px-3 py-1 ${
               isLifetime 
-                ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white" 
+                ? "bg-purple-500/20 text-purple-300 border border-purple-500/30" 
                 : isExpired
-                ? "bg-red-100 text-red-800"
-                : "bg-green-100 text-green-800"
+                ? "bg-red-500/20 text-red-300 border border-red-500/30"
+                : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
             }`}
           >
             {isLifetime ? "Active" : isExpired ? "Expired" : "Active"}
@@ -92,12 +96,12 @@ export default function PlanSection({ user, analysesCount }: PlanSectionProps) {
 
         {/* Plan Details */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="p-4 rounded-lg bg-gray-50">
+          <div className="glass-card p-4 rounded-lg border border-white/10 bg-[#191919]">
             <div className="flex items-center gap-2 mb-2">
-              <Calendar className="h-4 w-4 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">Subscription</span>
+              <Calendar className="h-4 w-4 text-gray-400" />
+              <span className="text-sm font-medium text-gray-300">Subscription</span>
             </div>
-            <p className="text-lg font-semibold text-gray-900">
+            <p className="text-lg font-semibold text-white">
               {isLifetime ? "Forever" : isExpired ? "Expired" : `${daysRemaining} days left`}
             </p>
             {isMonthly && !isExpired && (
@@ -107,12 +111,12 @@ export default function PlanSection({ user, analysesCount }: PlanSectionProps) {
             )}
           </div>
 
-          <div className="p-4 rounded-lg bg-gray-50">
+          <div className="glass-card p-4 rounded-lg border border-white/10 bg-[#191919]">
             <div className="flex items-center gap-2 mb-2">
-              <Zap className="h-4 w-4 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">Analyses</span>
+              <Zap className="h-4 w-4 text-gray-400" />
+              <span className="text-sm font-medium text-gray-300">Analyses</span>
             </div>
-            <p className="text-lg font-semibold text-gray-900">
+            <p className="text-lg font-semibold text-white">
               {isLifetime ? "Unlimited" : `${analysesCount}/${monthlyLimit}`}
             </p>
             <p className="text-xs text-gray-500">
@@ -120,12 +124,12 @@ export default function PlanSection({ user, analysesCount }: PlanSectionProps) {
             </p>
           </div>
 
-          <div className="p-4 rounded-lg bg-gray-50">
+          <div className="glass-card p-4 rounded-lg border border-white/10 bg-[#191919]">
             <div className="flex items-center gap-2 mb-2">
-              <Shield className="h-4 w-4 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">Status</span>
+              <Shield className="h-4 w-4 text-gray-400" />
+              <span className="text-sm font-medium text-gray-300">Status</span>
             </div>
-            <p className="text-lg font-semibold text-gray-900">
+            <p className="text-lg font-semibold text-white">
               {isLifetime ? "Premium" : isExpired ? "Expired" : "Active"}
             </p>
             <p className="text-xs text-gray-500">
@@ -138,8 +142,8 @@ export default function PlanSection({ user, analysesCount }: PlanSectionProps) {
         {isMonthly && !isExpired && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Monthly Usage</span>
-              <span className="text-sm text-gray-500">{analysesCount}/{monthlyLimit}</span>
+              <span className="text-sm font-medium text-gray-300">Monthly Usage</span>
+              <span className="text-sm text-gray-400">{analysesCount}/{monthlyLimit}</span>
             </div>
             <Progress value={usagePercentage} className="h-2" />
             <p className="text-xs text-gray-500">
@@ -150,43 +154,43 @@ export default function PlanSection({ user, analysesCount }: PlanSectionProps) {
       </Card>
 
       {/* Features Comparison */}
-      <Card className="p-6 border border-gray-100 shadow-sm rounded-xl">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Plan Features</h3>
+      <Card className="glass-card p-6 border border-white/10 shadow-lg rounded-xl backdrop-blur-xl bg-[#0c0c0c]">
+        <h3 className="text-lg font-semibold text-white mb-4">Plan Features</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="text-sm text-gray-700">AI Image Analysis</span>
+              <CheckCircle className="h-4 w-4 text-emerald-400" />
+              <span className="text-sm text-gray-300">AI Image Analysis</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="text-sm text-gray-700">Environmental Insights</span>
+              <CheckCircle className="h-4 w-4 text-emerald-400" />
+              <span className="text-sm text-gray-300">Environmental Insights</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="text-sm text-gray-700">Recycling Recommendations</span>
+              <CheckCircle className="h-4 w-4 text-emerald-400" />
+              <span className="text-sm text-gray-300">Recycling Recommendations</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="text-sm text-gray-700">Analysis History</span>
+              <CheckCircle className="h-4 w-4 text-emerald-400" />
+              <span className="text-sm text-gray-300">Analysis History</span>
             </div>
           </div>
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="text-sm text-gray-700">Eco Tips & Guides</span>
+              <CheckCircle className="h-4 w-4 text-emerald-400" />
+              <span className="text-sm text-gray-300">Eco Tips & Guides</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="text-sm text-gray-700">Community Access</span>
+              <CheckCircle className="h-4 w-4 text-emerald-400" />
+              <span className="text-sm text-gray-300">Community Access</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="text-sm text-gray-700">Leaderboard</span>
+              <CheckCircle className="h-4 w-4 text-emerald-400" />
+              <span className="text-sm text-gray-300">Leaderboard</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="text-sm text-gray-700">Priority Support</span>
+              <CheckCircle className="h-4 w-4 text-emerald-400" />
+              <span className="text-sm text-gray-300">Priority Support</span>
             </div>
           </div>
         </div>
@@ -194,29 +198,29 @@ export default function PlanSection({ user, analysesCount }: PlanSectionProps) {
 
       {/* Upgrade Prompt (for monthly users) */}
       {isMonthly && (
-        <Card className="p-6 border border-purple-200 shadow-sm rounded-xl bg-gradient-to-r from-purple-50 to-blue-50">
+        <Card className="glass-card p-6 border border-purple-500/30 shadow-lg rounded-xl backdrop-blur-xl bg-gradient-to-r from-purple-500/10 to-blue-500/10">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-lg bg-purple-100">
-              <Star className="h-5 w-5 text-purple-600" />
+            <div className="p-2 rounded-lg bg-purple-500/20 border border-purple-500/30">
+              <Star className="h-5 w-5 text-purple-400" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900">Upgrade to Lifetime</h3>
+            <h3 className="text-lg font-semibold text-white">Upgrade to Lifetime</h3>
           </div>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-300 mb-4">
             Get unlimited access forever with our lifetime plan. No monthly fees, no limits, 
             and all premium features included.
           </p>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Infinity className="h-4 w-4 text-purple-600" />
-              <span className="text-sm font-medium text-gray-700">Unlimited Analyses</span>
+              <Infinity className="h-4 w-4 text-purple-400" />
+              <span className="text-sm font-medium text-gray-300">Unlimited Analyses</span>
             </div>
             <div className="flex items-center gap-2">
-              <Crown className="h-4 w-4 text-purple-600" />
-              <span className="text-sm font-medium text-gray-700">Premium Features</span>
+              <Crown className="h-4 w-4 text-purple-400" />
+              <span className="text-sm font-medium text-gray-300">Premium Features</span>
             </div>
             <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-purple-600" />
-              <span className="text-sm font-medium text-gray-700">Lifetime Access</span>
+              <Shield className="h-4 w-4 text-purple-400" />
+              <span className="text-sm font-medium text-gray-300">Lifetime Access</span>
             </div>
           </div>
         </Card>

@@ -32,10 +32,13 @@ export async function GET() {
       analysisCount: user.analyses.length
     }));
 
-    // Sort by eco awareness score
-    usersWithScores.sort((a, b) => b.ecoAwarenessScore - a.ecoAwarenessScore);
+    // Filter out users with 0 analyses (0 points)
+    const usersWithAnalyses = usersWithScores.filter(user => user.analysisCount > 0 && user.ecoAwarenessScore > 0);
 
-    return NextResponse.json(usersWithScores);
+    // Sort by eco awareness score
+    usersWithAnalyses.sort((a, b) => b.ecoAwarenessScore - a.ecoAwarenessScore);
+
+    return NextResponse.json(usersWithAnalyses);
   } catch (error) {
     console.error("Leaderboard error:", error);
     return NextResponse.json(

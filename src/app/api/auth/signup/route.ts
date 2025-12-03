@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { db } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
 // Define validation schema
@@ -26,13 +26,13 @@ export async function POST(req: Request) {
     const { name, email, password } = validationResult.data;
     
     // Check if user already exists
-    const existingUser = await db.user.findUnique({
+    const existingUser = await prisma.user.findUnique({
       where: { email },
     });
     
     if (existingUser) {
       return NextResponse.json(
-        { message: 'User with this email already exists' },
+        { error: 'User with this email already exists' },
         { status: 409 }
       );
     }
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
     
     // Create the user
-    const user = await db.user.create({
+    const user = await prisma.user.create({
       data: {
         name,
         email,

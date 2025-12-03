@@ -18,6 +18,7 @@ const nextConfig = {
     DATABASE_URL: process.env.DATABASE_URL,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+    OPENWEATHER_API_KEY: process.env.OPENWEATHER_API_KEY,
   },
   // Explicitly configure path aliases to match tsconfig.json
   webpack: (config) => {

@@ -6,11 +6,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-import { Button } from "@/components/ui/button";
-import { useCodeAuth } from "@/lib/auth-utils";
+import { Button } from "@/components/ui/button2";
+import { useSession } from "next-auth/react";
 
 export function ImageUpload() {
-  const { user, isLoading } = useCodeAuth();
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const isLoading = status === "loading";
   const [image, setImage] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -144,7 +146,6 @@ export function ImageUpload() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': user.id,
         },
         body: JSON.stringify({ image: base64Image }),
       });
@@ -177,7 +178,7 @@ export function ImageUpload() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AnimatePresence mode="wait">
         {!image ? (
           <motion.div
@@ -186,35 +187,35 @@ export function ImageUpload() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className={`relative overflow-hidden rounded-3xl transition-all duration-300 ${
+            className={`relative overflow-hidden rounded-xl transition-all duration-300 glass-card border-2 border-dashed ${
               isDragOver 
-                ? "bg-gradient-to-br from-blue-50/80 to-purple-50/80 border-2 border-dashed border-blue-300/60" 
-                : "bg-gradient-to-br from-gray-50/80 to-white/80 border-2 border-dashed border-gray-300/60"
+                ? "border-blue-500/50" 
+                : "border-white/20"
             } backdrop-blur-xl`}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
           >
             {/* Glass effect overlay */}
-            <div className="absolute inset-0 bg-white/20 backdrop-blur-sm rounded-3xl"></div>
+            <div className="absolute inset-0 bg-white/5 backdrop-blur-sm rounded-xl"></div>
             
             {/* Decorative elements */}
-            <div className="absolute top-4 left-4 opacity-20">
-              <Camera className="h-6 w-6 text-purple-400" />
+            <div className="absolute top-2 left-2 opacity-20">
+              <Camera className="h-4 w-4 text-purple-400" />
             </div>
             
             {/* Content */}
-            <div className="relative z-10 p-12 text-center">
+            <div className="relative z-10 p-6 text-center">
               <div className="flex flex-col items-center justify-center">
                 {/* Icon container */}
-                <div className={`relative mb-6 p-6 rounded-2xl transition-all duration-300 ${
+                <div className={`relative mb-4 p-4 rounded-xl transition-all duration-300 ${
                   isDragOver 
-                    ? "bg-gradient-to-br from-blue-100/80 to-purple-100/80 shadow-lg scale-110" 
-                    : "bg-gradient-to-br from-gray-100/80 to-white/80 shadow-md"
+                    ? "bg-blue-500/20 shadow-lg scale-110" 
+                    : "glass-card shadow-md"
                 } backdrop-blur-sm`}>
                   <div className="relative">
-                    <Upload className={`h-12 w-12 transition-all duration-300 ${
-                      isDragOver ? "text-blue-500 scale-110" : "text-gray-500"
+                    <Upload className={`h-8 w-8 transition-all duration-300 ${
+                      isDragOver ? "text-blue-400 scale-110" : "text-gray-400"
                     }`} />
                     {isDragOver && (
                       <motion.div
@@ -222,21 +223,21 @@ export function ImageUpload() {
                         animate={{ opacity: 1, scale: 1 }}
                         className="absolute -top-1 -right-1"
                       >
-                        <Zap className="h-5 w-5 text-yellow-500" />
+                        <Zap className="h-4 w-4 text-yellow-500" />
                       </motion.div>
                     )}
                   </div>
               </div>
                 
                 {/* Text content */}
-                <div className="space-y-4 max-w-md">
-                  <h3 className={`text-2xl font-bold transition-all duration-300 ${
-                    isDragOver ? "text-blue-600" : "text-gray-800"
+                <div className="space-y-2 max-w-md">
+                  <h3 className={`text-lg font-semibold transition-all duration-300 ${
+                    isDragOver ? "text-blue-400" : "text-white"
                   }`}>
                     {isDragOver ? "Drop your image here!" : "Upload your image"}
               </h3>
-                  <p className={`text-sm transition-all duration-300 ${
-                    isDragOver ? "text-blue-600" : "text-gray-600"
+                  <p className={`text-xs transition-all duration-300 ${
+                    isDragOver ? "text-blue-300" : "text-gray-400"
                   } leading-relaxed`}>
                     {isDragOver 
                       ? "Release to upload and analyze your waste item"
@@ -246,17 +247,17 @@ export function ImageUpload() {
                 </div>
                 
                 {/* Upload button */}
-                <div className="mt-8">
+                <div className="mt-4">
               <Button
                 onClick={() => fileInputRef.current?.click()}
                     className={`relative overflow-hidden transition-all duration-300 ${
                       isDragOver 
-                        ? "bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 shadow-lg scale-105" 
-                        : "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-md"
-                    } rounded-2xl px-8 py-3 text-white font-semibold`}
+                        ? "bg-white hover:bg-gray-100 shadow-lg scale-105 text-gray-900" 
+                        : "bg-white hover:bg-gray-100 shadow-md text-gray-900"
+                    } rounded-xl px-6 py-2 text-sm font-semibold border-0`}
                   >
                     <span className="relative z-10 flex items-center gap-2">
-                      <ImageIcon className="h-5 w-5" />
+                      <ImageIcon className="h-4 w-4" />
                       Browse Files
                     </span>
                     {/* Button gradient overlay */}
@@ -278,7 +279,7 @@ export function ImageUpload() {
                   <motion.p 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mt-4 text-sm text-red-500 bg-red-50/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-red-200/50"
+                    className="mt-4 text-sm text-red-400 glass-card backdrop-blur-sm px-4 py-2 rounded-xl border border-red-500/30"
                   >
                     {error}
                   </motion.p>
@@ -296,7 +297,7 @@ export function ImageUpload() {
             className="space-y-6"
           >
             {/* Image preview */}
-            <div className="relative overflow-hidden rounded-3xl border border-gray-200/50 backdrop-blur-xl bg-white/80">
+            <div className="relative overflow-hidden rounded-xl border backdrop-blur-xl glass-card" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
               <div className="relative aspect-square">
               <Image
                 src={image}
@@ -307,24 +308,24 @@ export function ImageUpload() {
                 {/* Remove button */}
               <button
                 onClick={handleRemoveImage}
-                  className="absolute top-4 right-4 p-3 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:bg-white transition-all duration-200 hover:scale-110"
+                  className="absolute top-2 right-2 p-2 glass-card backdrop-blur-sm rounded-lg shadow-lg hover:bg-white/10 transition-all duration-200 hover:scale-110"
               >
-                  <X className="h-5 w-5 text-gray-600" />
+                  <X className="h-4 w-4 text-white" />
               </button>
               </div>
             </div>
             
             {/* Upload progress and actions */}
-            <div className="space-y-6">
+            <div className="space-y-3">
               {/* Progress bar */}
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium text-gray-700">Upload Progress</span>
-                  <span className="font-semibold text-blue-600">{uploadProgress}%</span>
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="font-medium text-gray-300">Upload Progress</span>
+                  <span className="font-semibold text-blue-400">{uploadProgress}%</span>
                 </div>
-                <div className="relative h-3 bg-gray-100/80 backdrop-blur-sm rounded-2xl overflow-hidden border border-gray-200/50">
+                <div className="relative h-2 bg-white/10 backdrop-blur-sm rounded-xl overflow-hidden border" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
                   <motion.div
-                    className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-2xl"
+                    className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-xl"
                     initial={{ width: 0 }}
                     animate={{ width: `${uploadProgress}%` }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
@@ -335,28 +336,28 @@ export function ImageUpload() {
               </div>
               
               {/* Action buttons */}
-              <div className="flex gap-4">
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
                   onClick={handleRemoveImage}
                   disabled={isUploading}
-                  className="flex-1 rounded-2xl border-gray-300/50 bg-white/80 backdrop-blur-sm hover:bg-gray-50/80 transition-all duration-200 font-medium"
+                  className="flex-1 rounded-xl glass-card backdrop-blur-sm hover:bg-white/10 transition-all duration-200 text-xs font-medium text-white border" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                 >
                   Change Image
                 </Button>
                 <Button
                   onClick={handleUpload}
                   disabled={isUploading}
-                  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 font-semibold text-white"
+                  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 text-xs font-semibold text-white py-2"
                 >
                   {isUploading ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-5 w-5 animate-spin" />
+                    <div className="flex items-center justify-center gap-1.5">
+                      <Loader2 className="h-3 w-3 animate-spin" />
                       <span>Analyzing...</span>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-center gap-2">
-                      <Zap className="h-5 w-5" />
+                    <div className="flex items-center justify-center gap-1.5">
+                      <Zap className="h-3 w-3" />
                       <span>Analyze Image</span>
                     </div>
                   )}
@@ -368,7 +369,7 @@ export function ImageUpload() {
                 <motion.p 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-sm text-red-500 bg-red-50/80 backdrop-blur-sm px-4 py-3 rounded-2xl border border-red-200/50"
+                  className="text-xs text-red-400 glass-card backdrop-blur-sm px-3 py-2 rounded-xl border border-red-500/30"
                 >
                   {error}
                 </motion.p>

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Leaf, TrendingUp, Zap, Target, Award, Sparkles, Star } from "lucide-react";
+import { TrendingUp, Zap, Award, Sparkles, Globe2 } from "lucide-react";
 
 import DashboardShell from "@/components/dashboard-shell";
 import ImageUpload from "@/components/image-upload";
@@ -11,15 +12,22 @@ import { Button } from "@/components/ui/button";
 import AnalysisHistory from "@/components/analysis-history";
 import { getRandomGreeting, calculateEcoAwarenessScore } from "@/lib/utils";
 import EcoTipsSection from "@/components/eco-tips-section";
-import { useCodeAuth } from "@/lib/auth-utils";
+import ImpactMetricsDashboard from "@/components/impact-metrics-dashboard";
+import CityOnboardingModal from "@/components/city-onboarding-modal";
+import { useSession } from "next-auth/react";
 import ClassicLoader from "@/components/ui/classic-loader";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input2";
+import { useToast } from "@/components/ui/use-toast";
 
-interface User {
-  id: string;
-  name: string;
-  subscriptionType: string;
-  subscriptionExpires?: string;
-}
+// Heavy 3D globe, client-only
+const Globe = dynamic(() => import("react-globe.gl"), { ssr: false });
 
 interface Analysis {
   id: string;
@@ -41,23 +49,32 @@ interface Analysis {
 }
 
 export default function DashboardPage() {
-  const { user, updateUser } = useCodeAuth();
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showNameSetup, setShowNameSetup] = useState(false);
-  const [userName, setUserName] = useState("");
-  const [isUpdatingName, setIsUpdatingName] = useState(false);
+  const [cityMetrics, setCityMetrics] = useState<{ city: string | null; totalAnalyses: number } | null>(null);
+  const [userType, setUserType] = useState<"individual" | "industry" | "">("");
+  const [cityInput, setCityInput] = useState("");
+  const [cityDialogOpen, setCityDialogOpen] = useState(false);
+  const [savingCity, setSavingCity] = useState(false);
+  const { toast } = useToast();
+  const [selectedPoint, setSelectedPoint] = useState<{ lat: number; lng: number; name: string } | null>(null);
 
   useEffect(() => {
-    if (user) {
-      // Check if user needs to set their name
-      if (!user.name || user.name.startsWith("User-")) {
-        setShowNameSetup(true);
-      }
-      
-      loadUserData(user.id);
+    if (status === "loading") return;
+    
+    if (!session?.user) {
+      router.push("/auth/login");
+      return;
     }
-  }, [user]);
+
+    if (session.user.id) {
+      loadUserData(session.user.id);
+      loadCityMetrics();
+      loadOnboardingProfile();
+    }
+  }, [session, status, router]);
 
   const loadUserData = async (userId: string) => {
     try {
@@ -73,147 +90,183 @@ export default function DashboardPage() {
     }
   };
 
-  const handleNameUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!userName.trim() || !user) return;
-
-    setIsUpdatingName(true);
+  const loadCityMetrics = async () => {
     try {
-      const response = await fetch(`/api/user/${user.id}/update-name`, {
+      const res = await fetch("/api/user/city-metrics");
+      if (!res.ok) return;
+      const data = await res.json();
+      setCityMetrics({
+        city: data.city,
+        totalAnalyses: data.totalAnalyses,
+      });
+    } catch (error) {
+      console.error("Failed to load city metrics:", error);
+    }
+  };
+
+  const loadOnboardingProfile = async () => {
+    try {
+      const res = await fetch("/api/user/onboarding");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data?.user) {
+        if (data.user.userType) setUserType(data.user.userType);
+        if (data.user.city) setCityInput(data.user.city);
+      }
+    } catch (error) {
+      console.error("Failed to load onboarding profile:", error);
+    }
+  };
+
+  const handlePickCityFromCoords = async (lat: number, lng: number) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`,
+        {
+          headers: {
+            Accept: "application/json",
+          },
+        }
+      );
+      const data = await res.json();
+      const detectedCity =
+        data?.address?.city ||
+        data?.address?.town ||
+        data?.address?.village ||
+        data?.address?.state_district ||
+        "";
+
+      if (detectedCity) {
+        setCityInput(detectedCity);
+        setSelectedPoint({ lat, lng, name: detectedCity });
+
+        toast({
+          title: "City selected",
+          description: `We detected ${detectedCity} from the globe. You can adjust it if needed.`,
+        });
+      } else {
+        toast({
+          title: "Could not detect city",
+          description: "Try clicking closer to a major city, or enter it manually.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("[CITY_GLOBE] Reverse geocoding error:", error);
+      toast({
+        title: "Error detecting city",
+        description: "Please type your city manually.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveCity = async () => {
+    if (!cityInput.trim()) {
+      toast({
+        title: "City required",
+        description: "Please enter your city so we can group your impact correctly.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const finalUserType = userType || "individual";
+
+    try {
+      setSavingCity(true);
+      const res = await fetch("/api/user/onboarding", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name: userName.trim() }),
+        body: JSON.stringify({
+          source: "",
+          goals: "",
+          userType: finalUserType,
+          city: cityInput.trim(),
+        }),
       });
 
-      if (response.ok) {
-        const updatedUser = { ...user, name: userName.trim() };
-        updateUser(updatedUser);
-        setShowNameSetup(false);
+      if (!res.ok) {
+        toast({
+          title: "Save failed",
+          description: "Could not update your city. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "City updated",
+        description: "Your city has been updated and analytics will now reflect it.",
+      });
+
+      setCityDialogOpen(false);
+      if (session?.user?.id) {
+        await loadCityMetrics();
+        await loadUserData(session.user.id);
       }
     } catch (error) {
-      console.error("Failed to update name:", error);
+      console.error("[CITY_GLOBE] Failed to save city:", error);
+      toast({
+        title: "Unexpected error",
+        description: "Something went wrong while saving. Please try again.",
+        variant: "destructive",
+      });
     } finally {
-      setIsUpdatingName(false);
+      setSavingCity(false);
     }
   };
 
-  if (isLoading) {
+  if (status === "loading" || isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0c0c0c' }}>
         <ClassicLoader size="lg" />
       </div>
     );
   }
 
-  if (showNameSetup) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-md"
-        >
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border-0">
-            <div className="text-center mb-8">
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-green-500 to-teal-600 shadow-lg">
-                  <Leaf className="h-8 w-8 text-white" />
-                </div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-green-600 bg-clip-text text-transparent">
-                  Welcome to Ecoverse!
-                </h1>
-              </div>
-              <p className="text-gray-600">
-                Let's personalize your experience. What should we call you?
-              </p>
-            </div>
-
-            <form onSubmit={handleNameUpdate} className="space-y-6">
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Your Name
-                </label>
-                <input
-                  type="text"
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  placeholder="Enter your name"
-                  className="w-full h-12 px-4 rounded-xl border-2 border-gray-200 focus:border-green-500 focus:ring-green-500/20 text-lg bg-white text-gray-900 placeholder-gray-500"
-                  required
-                />
-              </div>
-
-              <Button
-                type="submit"
-                disabled={isUpdatingName || !userName.trim()}
-                className="w-full h-12 rounded-xl bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                      {isUpdatingName ? (
-                        <div className="flex items-center gap-2">
-                          <ClassicLoader size="sm" className="border-white" />
-                          <span>Setting up...</span>
-                        </div>
-                      ) : (
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5" />
-                    <span>Start My Journey</span>
-                  </div>
-                )}
-              </Button>
-            </form>
-          </div>
-        </motion.div>
-      </div>
-    );
+  if (!session?.user) {
+    return null;
   }
-
-  if (!user) return null;
 
   const ecoAwarenessScore = calculateEcoAwarenessScore(analyses);
   const recentAnalyses = analyses.slice(0, 5);
-  const firstName = user.name?.split(' ')[0] || 'User';
+  const firstName = session.user.name?.split(' ')[0] || 'User';
   const greeting = getRandomGreeting(firstName);
 
   return (
     <DashboardShell>
-      <div className="flex flex-col gap-8">
+      {/* City onboarding popup */}
+      <CityOnboardingModal />
+
+      <div className="flex flex-col gap-6 pt-6 sm:pt-8 md:pt-4">
         {/* Header - Modern Design */}
-        <div className="text-center">
-          <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4">
-            <div className="p-2 sm:p-3 bg-gradient-to-br from-green-400 to-green-600 rounded-xl sm:rounded-2xl shadow-lg">
-              <Leaf className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
-            </div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-green-500 to-green-400 bg-clip-text text-transparent">
-              {greeting}
-            </h1>
-          </div>
-          <p className="text-gray-600 max-w-md mx-auto text-sm sm:text-base px-4">
+        <div className="text-left">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight text-white mb-2">
+            {greeting}
+          </h1>
+          <p className="text-gray-300 text-xs sm:text-sm">
             Upload an image to analyze waste items and get eco-friendly recommendations.
           </p>
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Stats Section - Enhanced with modern glass UI */}
-          <div className="bg-white/80 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-white/20">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-green-400 to-green-600">
-                <Target className="h-5 w-5 text-white" />
-              </div>
-              <h2 className="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 text-transparent bg-clip-text">
-                Your Impact
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-1 gap-4">
+          <div className="glass-card p-4 rounded-xl shadow-lg">
+            <h2 className="text-lg font-semibold text-white mb-4">
+              Your Impact
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-1 gap-3">
               {[
                 {
                   title: "Analyses",
                   value: analyses.length,
                   description: "Total items analyzed",
                   color: "from-emerald-400 to-emerald-600",
-                  icon: <TrendingUp className="h-5 w-5 text-emerald-500" />,
+                  icon: <TrendingUp className="h-4 w-4 text-emerald-500" />,
                   bgGradient: "from-emerald-50 to-emerald-100/50",
                   borderColor: "border-emerald-200/50",
                   sparkleColor: "text-emerald-400",
@@ -224,7 +277,7 @@ export default function DashboardPage() {
                   value: ecoAwarenessScore,
                   description: "Environmental awareness score",
                   color: "from-blue-400 to-blue-600",
-                  icon: <Zap className="h-5 w-5 text-blue-500" />,
+                  icon: <Zap className="h-4 w-4 text-blue-500" />,
                   bgGradient: "from-blue-50 to-blue-100/50",
                   borderColor: "border-blue-200/50",
                   sparkleColor: "text-blue-400",
@@ -233,40 +286,24 @@ export default function DashboardPage() {
               ].map((stat, i) => (
                 <div 
                   key={i} 
-                  className={`relative overflow-hidden p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-xl bg-gradient-to-br ${stat.bgGradient} border ${stat.borderColor} backdrop-blur-sm group`}
+                  className="relative overflow-hidden p-4 rounded-xl transition-all duration-300 hover:scale-[1.01] hover:shadow-xl glass-card"
                 >
-                  {/* Glass effect overlay */}
-                  <div className="absolute inset-0 bg-white/20 backdrop-blur-sm rounded-2xl"></div>
-                  
                   {/* Content */}
                   <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2.5 rounded-xl bg-white/80 backdrop-blur-sm shadow-sm">
-                      {stat.icon}
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="p-2 rounded-lg glass-card">
+                        {stat.icon}
                       </div>
-                      <p className="text-sm font-semibold text-gray-700">{stat.title}</p>
+                      <p className="text-xs font-semibold text-white">{stat.title}</p>
                     </div>
-                    <div className="flex items-end gap-2 mb-2">
-                      <p className={`text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r ${stat.color}`}>
+                    <div className="flex items-baseline gap-1.5 mb-2">
+                      <p className={`text-3xl font-semibold bg-clip-text text-transparent bg-gradient-to-r ${stat.color}`}>
                         {stat.value}
                       </p>
-                      {stat.title === "Eco Awareness" && <p className="text-gray-600 text-sm mb-1 font-medium">pts</p>}
-                      {stat.title === "Analyses" && <p className="text-gray-600 text-sm mb-1 font-medium">{stat.value === 1 ? 'item' : 'items'}</p>}
+                      {stat.title === "Eco Awareness" && <p className="text-gray-400 text-sm font-medium">pts</p>}
+                      {stat.title === "Analyses" && <p className="text-gray-400 text-sm font-medium">{stat.value === 1 ? 'item' : 'items'}</p>}
                     </div>
-                    <p className="text-xs text-gray-600 font-medium">{stat.description}</p>
-                  </div>
-                  
-                  {/* Enhanced decorative elements */}
-                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="relative">
-                      <Sparkles className={`h-6 w-6 ${stat.sparkleColor} animate-pulse`} />
-                      <Star className={`h-3 w-3 ${stat.starColor} absolute -top-1 -right-1 animate-bounce`} />
-                    </div>
-                  </div>
-                  
-                  {/* Background sparkles for subtle effect */}
-                  <div className="absolute bottom-2 right-2 opacity-20">
-                    <Sparkles className={`h-4 w-4 ${stat.sparkleColor}`} />
+                    <p className="text-xs text-gray-400">{stat.description}</p>
                   </div>
                 </div>
               ))}
@@ -274,47 +311,208 @@ export default function DashboardPage() {
           </div>
           
           {/* Upload Section - Enhanced with modern glass UI */}
-          <div className="bg-white/80 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-white/20">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-purple-400 to-purple-600">
-                <Award className="h-5 w-5 text-white" />
+          <div className="glass-card p-4 rounded-xl shadow-lg">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-1.5 rounded-lg bg-gradient-to-br from-purple-400 to-purple-600">
+                <Award className="h-4 w-4 text-white" />
               </div>
-              <h2 className="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 text-transparent bg-clip-text">
+              <h2 className="text-lg font-semibold text-white">
                 Quick Upload
               </h2>
             </div>
-            <p className="text-gray-600 mb-6">Take a photo or upload an image of waste items for instant analysis.</p>
+            <p className="text-gray-300 text-xs mb-4">Take a photo or upload an image of waste items for instant analysis.</p>
             <ImageUpload />
           </div>
         </div>
 
-        {/* Recent Analyses */}
-        <div className="bg-white/80 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-white/20">
-          <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600">
-              <TrendingUp className="h-5 w-5 text-white" />
+        {/* Impact Metrics Dashboard */}
+        <ImpactMetricsDashboard 
+          analyses={analyses} 
+          city={cityMetrics?.city || undefined}
+          cityTotalAnalyses={cityMetrics?.totalAnalyses}
+        />
+
+        {/* Recent Analyses + City Globe Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Recent Analyses */}
+          <div className="glass-card p-4 rounded-xl shadow-lg">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-1.5 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600">
+                <TrendingUp className="h-4 w-4 text-white" />
               </div>
-              <h2 className="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 text-transparent bg-clip-text">
+              <h2 className="text-lg font-semibold text-white">
                 Recent Analyses
               </h2>
             </div>
-          {recentAnalyses.length > 0 ? (
-            <AnalysisHistory analyses={recentAnalyses} />
-          ) : (
-            <div className="text-center py-8">
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <Sparkles className="h-6 w-6 text-gray-400" />
-                <p className="text-gray-500 font-medium">No analyses yet</p>
-                <Sparkles className="h-6 w-6 text-gray-400" />
+            {recentAnalyses.length > 0 ? (
+              <AnalysisHistory analyses={recentAnalyses} />
+            ) : (
+              <div className="text-center py-8">
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <Sparkles className="h-6 w-6 text-gray-400" />
+                  <p className="text-gray-300 font-medium">No analyses yet</p>
+                  <Sparkles className="h-6 w-6 text-gray-400" />
+                </div>
+                <p className="text-gray-400 text-sm">Upload your first image to get started!</p>
               </div>
-              <p className="text-gray-400 text-sm">Upload your first image to get started!</p>
+            )}
+          </div>
+
+          {/* City Globe & Selection */}
+          <div className="glass-card p-4 rounded-xl shadow-lg flex flex-col gap-3">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-[#191919] border border-white/10">
+                  <Globe2 className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-white">
+                    Your City Globe
+                  </h2>
+                  <p className="text-xs text-gray-400">
+                    Visualize and adjust the city that powers your shared waste score.
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-8 px-3 text-xs border-white/20 text-white bg-white/5 hover:bg-white/10"
+                onClick={() => {
+                  setCityInput(cityMetrics?.city || cityInput || "");
+                  setCityDialogOpen(true);
+                }}
+              >
+                Change city
+              </Button>
             </div>
-          )}
+
+            <div className="relative rounded-xl border border-white/10 bg-[#111111] overflow-hidden h-56">
+              <Globe
+                backgroundColor="rgba(0,0,0,0)"
+                globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
+                bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
+                showAtmosphere={true}
+                atmosphereColor="deepskyblue"
+                atmosphereAltitude={0.25}
+                width={400}
+                height={220}
+                pointsData={selectedPoint ? [selectedPoint] : []}
+                pointLat={(d: any) => d.lat}
+                pointLng={(d: any) => d.lng}
+                pointRadius={() => 0.25}
+                pointColor={() => "rgba(56, 189, 248, 0.95)"}
+                onGlobeClick={(point: any) => {
+                  if (!point || typeof point.lat !== "number" || typeof point.lng !== "number") return;
+                  handlePickCityFromCoords(point.lat, point.lng);
+                }}
+              />
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#0c0c0c] to-transparent pt-6 pb-3 px-4 pointer-events-none">
+                <p className="text-[11px] text-gray-300">
+                  Tap anywhere on the globe to detect the nearest city. We use real map data; no mock locations.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between mt-1">
+              <div className="flex flex-col">
+                <span className="text-xs text-gray-400">Selected city</span>
+                <span className="text-sm font-semibold text-white">
+                  {cityMetrics?.city || cityInput || "Not set yet"}
+                </span>
+              </div>
+              {cityMetrics?.totalAnalyses !== undefined && cityMetrics?.city && (
+                <div className="text-right">
+                  <span className="text-[11px] text-gray-400">
+                    City waste score
+                  </span>
+                  <p className="text-sm font-semibold text-emerald-400">
+                    {cityMetrics.totalAnalyses} items analyzed
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
         
         {/* Tips Section */}
         <EcoTipsSection />
       </div>
+
+      {/* Change City Dialog */}
+      <Dialog open={cityDialogOpen} onOpenChange={setCityDialogOpen}>
+        <DialogContent className="sm:max-w-md glass-card border border-white/10 bg-[#0c0c0c] p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-5 pb-3 border-b border-white/5">
+            <DialogTitle className="text-lg font-semibold text-white flex items-center gap-2">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#191919] border border-white/10">
+                <Globe2 className="h-4 w-4 text-white" />
+              </span>
+              Adjust your city
+            </DialogTitle>
+            <DialogDescription className="text-xs text-gray-400 mt-1">
+              Pick a new city on the globe or type it below. This will change how your shared city waste score is calculated.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="px-6 py-4 space-y-3 bg-[#0c0c0c]">
+            <div className="rounded-xl border border-white/10 bg-[#111111] relative overflow-hidden">
+              <div className="h-56 w-full">
+                <Globe
+                  backgroundColor="rgba(0,0,0,0)"
+                  globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
+                  bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
+                  showAtmosphere={true}
+                  atmosphereColor="deepskyblue"
+                  atmosphereAltitude={0.25}
+                  width={400}
+                  height={220}
+                  pointsData={selectedPoint ? [selectedPoint] : []}
+                  pointLat={(d: any) => d.lat}
+                  pointLng={(d: any) => d.lng}
+                  pointRadius={() => 0.25}
+                  pointColor={() => "rgba(56, 189, 248, 0.95)"}
+                  onGlobeClick={(point: any) => {
+                    if (!point || typeof point.lat !== "number" || typeof point.lng !== "number") return;
+                    handlePickCityFromCoords(point.lat, point.lng);
+                  }}
+                />
+              </div>
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#0c0c0c] to-transparent pt-6 pb-3 px-4 pointer-events-none">
+                <p className="text-[11px] text-gray-300">
+                  Tap to detect a city using real-world coordinates. You can still edit the name below.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-gray-300">City</p>
+              <Input
+                id="city-change"
+                value={cityInput}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setCityInput(e.target.value)
+                }
+                placeholder="e.g., Jaipur"
+                className="bg-[#111111] border-white/10 text-sm"
+              />
+            </div>
+          </div>
+
+          <div className="px-6 pb-5 pt-3 border-t border-white/5 flex items-center justify-between bg-[#0c0c0c]">
+            <p className="text-[11px] text-gray-500 max-w-[60%]">
+              Changing your city updates how we group your analytics with others.
+            </p>
+            <Button
+              type="button"
+              onClick={handleSaveCity}
+              disabled={savingCity}
+              className="text-sm px-4 py-2 bg-white/10 hover:bg-white/15 border border-white/20 text-white rounded-lg"
+            >
+              {savingCity ? "Saving..." : "Save city"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardShell>
   );
 } 

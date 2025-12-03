@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ArrowLeft, Recycle, AlertTriangle, Leaf, RefreshCw, AlertCircle } from "lucide-react";
 
 import DashboardShell from "@/components/dashboard-shell";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button2";
 import { parseJsonArray, parseJsonObject } from "@/lib/utils";
 import AnalysisChat from "@/components/analysis-chat";
 import ReadMoreText from "@/components/read-more-text";
@@ -30,8 +30,9 @@ Examples:
 DO NOT include any explanations, just the 3-4 word response.`;
     
     // Use the Pollinations API directly
+    const apiKey = process.env.POLLINATIONS_API_KEY || '';
     const encodedPrompt = encodeURIComponent(prompt);
-    const apiUrl = `https://text.pollinations.ai/${encodedPrompt}`;
+    const apiUrl = `https://enter.pollinations.ai/api/generate/text/${encodedPrompt}${apiKey ? `?key=${apiKey}` : ''}`;
     
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -85,8 +86,9 @@ Examples:
 DO NOT include any explanations, just the 4-6 word response.`;
     
     // Use the Pollinations API directly
+    const apiKey = process.env.POLLINATIONS_API_KEY || '';
     const encodedPrompt = encodeURIComponent(prompt);
-    const apiUrl = `https://text.pollinations.ai/${encodedPrompt}`;
+    const apiUrl = `https://enter.pollinations.ai/api/generate/text/${encodedPrompt}${apiKey ? `?key=${apiKey}` : ''}`;
     
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -140,8 +142,9 @@ Give a step-by-step guide with emojis in this format:
 Keep it short, practical, and encouraging. 3-4 steps maximum.`;
     
     // Use the Pollinations API directly
+    const apiKey = process.env.POLLINATIONS_API_KEY || '';
     const encodedPrompt = encodeURIComponent(prompt);
-    const apiUrl = `https://text.pollinations.ai/${encodedPrompt}`;
+    const apiUrl = `https://enter.pollinations.ai/api/generate/text/${encodedPrompt}${apiKey ? `?key=${apiKey}` : ''}`;
     
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -211,7 +214,8 @@ Examples:
 DO NOT include any explanations, just the 1-3 word material description.`;
     
     const encodedPrompt = encodeURIComponent(prompt);
-    const apiUrl = `https://text.pollinations.ai/${encodedPrompt}`;
+    const apiKey = process.env.POLLINATIONS_API_KEY || '';
+    const apiUrl = `https://enter.pollinations.ai/api/generate/text/${encodedPrompt}${apiKey ? `?key=${apiKey}` : ''}`;
     
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -263,7 +267,8 @@ Choose ONLY ONE of these categories:
 Give ONLY the category name, no other text.`;
     
     const encodedPrompt = encodeURIComponent(prompt);
-    const apiUrl = `https://text.pollinations.ai/${encodedPrompt}`;
+    const apiKey = process.env.POLLINATIONS_API_KEY || '';
+    const apiUrl = `https://enter.pollinations.ai/api/generate/text/${encodedPrompt}${apiKey ? `?key=${apiKey}` : ''}`;
     
     const response = await fetch(apiUrl, {
       method: 'GET',

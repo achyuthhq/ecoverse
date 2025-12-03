@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Loader2, MapPin, Info, Search } from "lucide-react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button2";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input2";
 import Head from "next/head";
 
 // Types for recycling locations
@@ -543,10 +543,19 @@ export default function EventsContent() {
         )}
         
         {!hasSearched ? (
-          <div className="flex items-center justify-center h-[400px] bg-gray-50 rounded-xl">
+          <div
+            className="flex items-center justify-center h-[400px] rounded-xl"
+            style={{
+              background: "linear-gradient(135deg, rgba(12,12,12,0.65) 60%, rgba(25,25,25,0.85) 100%)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              boxShadow: "0 8px 32px 0 rgba(12,12,12,0.12), 0 1.5px 12px 0 rgba(25,25,25,0.21)",
+              border: "1.5px solid rgba(255,255,255,0.08)"
+            }}
+          >
             <div className="text-center max-w-md mx-auto p-6">
               <MapPin className="h-12 w-12 text-green-500 mx-auto mb-4" />
-              <h3 className="text-xl font-medium text-gray-900 mb-2">Search for a Location</h3>
+              <h3 className="text-xl font-medium text-white-900 mb-2">Search for a Location</h3>
               <p className="text-gray-500">
                 Enter any location in the search bar above to find recycling locations nearby.
                 Try cities, neighborhoods, or specific addresses.
@@ -627,7 +636,7 @@ export default function EventsContent() {
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between">
                               <div>
-                                <h3 className="font-medium text-gray-900">
+                                <h3 className="font-medium text-white-900">
                                   {location.tags.name || "Recycling Point"}
                                 </h3>
                                 <div className="flex items-center mt-1 text-sm text-gray-500">

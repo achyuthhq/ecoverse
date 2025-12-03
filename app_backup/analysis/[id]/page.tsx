@@ -7,7 +7,7 @@ import { ChevronLeft, AlertTriangle, Recycle, Leaf, Info } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDate, parseJsonArray } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button2";
 import DashboardShell from "@/components/dashboard-shell";
 import { motion } from "framer-motion";
 

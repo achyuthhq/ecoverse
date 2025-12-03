@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import Webcam from "react-webcam";
 import { Camera, RefreshCw, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button2";
 import Image from "next/image";
 
 interface CameraCaptureProps {

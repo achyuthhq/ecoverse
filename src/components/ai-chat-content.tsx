@@ -2,11 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button2";
 import { RefreshCw, Send, User, Bot, Leaf, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import VoiceRecorder from "@/components/voice-recorder";
+import { PromptBox } from "@/components/ui/prompt-box";
 
 interface Message {
   role: "user" | "assistant";
@@ -17,6 +16,7 @@ export default function AIChatContent() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<string>('openai');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -69,36 +69,45 @@ I can help you with questions about:
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, messageText?: string, model?: string) => {
     e.preventDefault();
-    if (!input.trim() || loading) return;
+    const messageToSend = messageText || input.trim();
+    if (!messageToSend || loading) return;
 
-    const userMessage = input.trim();
     setInput("");
 
     // Add user message to chat
-    setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
+    setMessages((prev) => [...prev, { role: "user", content: messageToSend }]);
 
     // Set loading state
     setLoading(true);
 
+    const modelToUse = model || selectedModel;
+
     try {
       // Create a prompt for the Pollinations API
       const prompt = `You are an environmental expert assistant for Ecoverse, a platform focused on sustainability and proper waste management. 
-      Answer this user question concisely and helpfully: "${userMessage}"
+      Answer this user question concisely and helpfully: "${messageToSend}"
       
       Format your response using Markdown with proper spacing between paragraphs and sections.
       Include relevant environmental facts when appropriate.`;
       
       // Use the Pollinations API directly
+      // Map model selection to actual API parameter
+      // GPT-5 uses 'openai' parameter but different display name
+      const apiModel = modelToUse === 'openai-gpt5' ? 'openai' : modelToUse;
+      
+      const apiKey = process.env.NEXT_PUBLIC_POLLINATIONS_API_KEY || '';
       const encodedPrompt = encodeURIComponent(prompt);
-      const apiUrl = `https://text.pollinations.ai/${encodedPrompt}`;
+      const params = new URLSearchParams();
+      if (apiKey) params.append('key', apiKey);
+      params.append('model', apiModel);
+      const apiUrl = `https://enter.pollinations.ai/api/generate/text/${encodedPrompt}?${params.toString()}`;
       
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
           'Accept': 'text/plain',
-          'Cache-Control': 'no-cache'
         }
       });
 
@@ -181,11 +190,11 @@ I can help you with questions about:
         {/* Chat Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-md">
+            <div className="h-10 w-10 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center shadow-md">
               <Leaf className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold bg-gradient-to-r from-green-600 to-emerald-500 text-transparent bg-clip-text">EcoverseAI</h2>
+              <h2 className="text-lg font-semibold text-white">EcoverseAI</h2>
               <p className="text-xs text-gray-500">Your environmental assistant</p>
             </div>
           </div>
@@ -202,7 +211,7 @@ I can help you with questions about:
 
         {/* Messages Container */}
         <div 
-          className="h-[calc(100vh-380px)] overflow-y-auto p-4 bg-gradient-to-b from-slate-50 via-white to-green-50/30"
+          className="h-[calc(100vh-380px)] overflow-y-auto p-4 bg-gradient-to-b from-slate-50 via-white to-white pb-24"
           ref={chatContainerRef}
         >
           <div className="space-y-6">
@@ -290,32 +299,27 @@ prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline"
           </div>
         </div>
 
-        {/* Input Area */}
-        <div className="bg-white/80 backdrop-blur-sm border-t border-gray-100 p-4">
-          <form onSubmit={handleSubmit} className="flex gap-2">
-            <div className="flex-1 flex gap-2 items-end">
-              <VoiceRecorder onTranscriptionComplete={handleVoiceTranscription} />
-              <Textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask me anything about sustainability..."
-                className="min-h-[50px] max-h-[120px] text-sm resize-none border-gray-200 focus:border-green-500 focus:ring-1 focus:ring-green-500 rounded-xl shadow-sm flex-1"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSubmit(e);
-                  }
-                }}
-                disabled={loading}
-              />
-            </div>
-            <Button
-              type="submit"
-              className="bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl h-[50px] w-[50px] p-0 flex-shrink-0 shadow-md"
-              disabled={loading || !input.trim()}
-            >
-              <Send className="h-4 w-4 sm:h-5 sm:w-5" />
-            </Button>
+        {/* Input Area - Floating */}
+        <div className="absolute bottom-0 left-0 right-0 p-3 z-10">
+          <form onSubmit={handleSubmit}>
+            <PromptBox
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onSend={(value, model) => {
+                if (value.trim() && !loading) {
+                  const fakeEvent = {
+                    preventDefault: () => {},
+                  } as React.FormEvent<HTMLFormElement>;
+                  handleSubmit(fakeEvent, value, model);
+                }
+              }}
+              onVoiceRecord={() => {
+                handleVoiceTranscription("");
+              }}
+              selectedModel={selectedModel}
+              onModelChange={setSelectedModel}
+              disabled={loading}
+            />
           </form>
         </div>
       </div>
