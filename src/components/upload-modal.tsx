@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Upload, Image as ImageIcon, Loader2, Camera, Sparkles, Zap, Target, ChevronDown } from "lucide-react";
 import Image from "next/image";
@@ -23,6 +24,7 @@ import CameraCapture from "@/components/CameraCapture";
 import ImageCropper from "@/components/image-cropper";
 import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { ShaderAnimation } from "@/components/shader-animation";
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -30,26 +32,21 @@ interface UploadModalProps {
 }
 
 const modelOptions = {
-  'nova-micro': 'Nova Micro',
-  'mistral': 'Mistral 7B',
-  'gemini': 'Gemini 2.5 Pro',
-  'gemini-search': 'Gemini Search',
-  'openai-fast': 'GPT-4o Mini',
-  'grok': 'Grok 3',
   'openai': 'GPT-5',
-  'qwen-coder': 'Qwen Coder',
-  'perplexity-fast': 'Perplexity Sonar',
-  'chickytutor': 'ChickyTutor',
-  'claude-fast': 'Claude 4 Haiku',
-  'kimi-k2-thinking': 'Kimi K2 🧠',
-  'midijourney': 'Midijourney',
+  'openai-large': 'GPT-5.2 Max',
   'claude': 'Claude 4.5 Sonnet',
-  'deepseek': 'DeepSeek R1 🧠',
-  'perplexity-reasoning': 'Perplexity Reasoning 🧠',
   'claude-large': 'Claude 4.5 Opus',
-  'gemini-large': 'Gemini 2.5 Ultra 🧠',
-  'openai-large': 'GPT-5.2 (Max) 🧠',
-  'openai-audio': 'GPT-5 Audio 🎙️',
+  'gemini': 'Gemini 3.0 Pro',
+  'gemini-large': 'Gemini 3.0 Ultra',
+  'gemini-search': 'Gemini Search',
+  'mistral': 'Mistral 7B',
+  'grok': 'Grok 4',
+  'perplexity-fast': 'Perplexity Sonar',
+  'perplexity-reasoning': 'Perplexity Reasoning',
+  'deepseek': 'DeepSeek R1',
+  'kimi-k2-thinking': 'Kimi K2',
+  'openai-fast': 'GPT-4o Mini',
+
 };
 
 
@@ -63,7 +60,7 @@ export default function UploadModal({ isOpen, onClose }: UploadModalProps) {
   const [activeTab, setActiveTab] = useState<'upload' | 'camera'>('upload');
   const [showCropper, setShowCropper] = useState(false);
   const [originalImage, setOriginalImage] = useState<string | null>(null);
-  const [selectedModel, setSelectedModel] = useState<string>('');
+  const [selectedModel, setSelectedModel] = useState<string>('openai');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -294,8 +291,32 @@ export default function UploadModal({ isOpen, onClose }: UploadModalProps) {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-lg md:max-w-xl lg:max-w-2xl max-h-[90vh] glass-card backdrop-blur-xl rounded-3xl p-0 border overflow-hidden shadow-2xl" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+    <>
+      {isUploading && typeof window !== 'undefined' && createPortal(
+        <div className="fixed inset-0 w-screen h-screen z-[9999]">
+          <ShaderAnimation />
+          <div className="absolute inset-0 flex items-center justify-center z-[10000]">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="text-center px-4"
+            >
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">AI Analysis in Progress</h2>
+              <p className="text-lg sm:text-xl md:text-2xl font-semibold text-emerald-300/90 tracking-wide">
+                {uploadProgress < 30 ? "Uploading..." : 
+                 uploadProgress < 60 ? "Recognizing..." : 
+                 uploadProgress < 95 ? "Thinking..." : "Generating..."}
+              </p>
+            </motion.div>
+          </div>
+        </div>,
+        document.body
+      )}
+      <Dialog open={isOpen && !isUploading} onOpenChange={(open: boolean) => !open && handleClose()}>
+        <DialogContent className={cn(
+          "sm:max-w-lg md:max-w-xl lg:max-w-2xl max-h-[90vh] glass-card backdrop-blur-xl rounded-3xl p-0 border overflow-hidden shadow-2xl"
+        )} style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
         <div className="relative">
           {/* Enhanced Header with modern design */}
           <div className="relative p-4 border-b bg-gradient-to-r from-white/5 to-transparent" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
@@ -444,21 +465,6 @@ export default function UploadModal({ isOpen, onClose }: UploadModalProps) {
                       </div>
                       
                       <div className="mt-3 space-y-3">
-                        {isUploading && (
-                          <div className="space-y-1.5">
-                            <div className="flex justify-between text-xs font-medium text-gray-300 font-montserrat">
-                              <span>Upload progress</span>
-                              <span>{uploadProgress}%</span>
-                            </div>
-                            <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-white transition-all duration-300 ease-out rounded-full shadow-lg"
-                                style={{ width: `${uploadProgress}%` }}
-                              />
-                            </div>
-                          </div>
-                        )}
-                        
                         {error && (
                           <motion.div 
                             initial={{ opacity: 0, y: 10 }}
@@ -711,5 +717,6 @@ export default function UploadModal({ isOpen, onClose }: UploadModalProps) {
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 } 

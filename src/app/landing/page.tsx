@@ -7,6 +7,8 @@ import Balatro from "@/components/balatro-background";
 import ScrollReveal from "@/components/scroll-reveal";
 import { StickyScroll } from "@/components/sticky-scroll";
 import CardNav from "@/components/card-nav";
+import TrashGate from "@/components/trash-gate";
+import PixelCard from "@/components/pixel-card";
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 40 },
@@ -20,6 +22,7 @@ const sectionVariants = {
 export default function LandingPage() {
   return (
     <div className="relative min-h-screen overflow-x-hidden text-white">
+      <TrashGate />
       {/* Fixed Balatro background with green vibes */}
       <div className="fixed inset-0 -z-10">
         <Balatro isRotate={true} mouseInteraction={true} pixelFilter={700} />
@@ -83,7 +86,7 @@ export default function LandingPage() {
                 },
                 {
                   label: "Get started",
-                  href: "/auth/login",
+                  href: "/dashboard",
                   ariaLabel: "Create an account or log in",
                 },
               ],
@@ -140,7 +143,7 @@ export default function LandingPage() {
               baseRotation={4}
               blurStrength={6}
             >
-              Turn any waste photo into real climate impact.
+              Turn any waste photo into smarter disposal decisions.
             </ScrollReveal>
 
             <motion.p
@@ -341,7 +344,7 @@ export default function LandingPage() {
               baseOpacity={0.2}
               baseRotation={3}
             >
-              Not just insight. Measurable climate progress.
+              Not just insight. Measurable waste impact.
             </ScrollReveal>
             <motion.p
               variants={sectionVariants}
@@ -362,41 +365,98 @@ export default function LandingPage() {
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, amount: 0.2 }}
-              className="rounded-2xl border border-white/10 bg-black/40 p-4 backdrop-blur-md"
             >
-              <p className="text-xs font-medium text-gray-400">Analyses run</p>
-              <p className="mt-1 text-2xl font-semibold text-white">12,384</p>
-              <p className="mt-1 text-[11px] text-emerald-200">
-                +328 today • across all users
-              </p>
+              <PixelCard
+                variant="default"
+                colors="#10b981,#34d399,#6ee7b7"
+                gap={6}
+                speed={30}
+                className="h-full w-full p-4"
+              >
+                <div className="flex flex-col h-full">
+                  <div className="mb-4">
+                    <p className="text-xs font-medium text-gray-400">Total waste generated</p>
+                    <p className="mt-1 text-2xl font-semibold text-white">2.01 B</p>
+                    <p className="mt-1 text-[11px] text-emerald-200">
+                      Billion tonnes annually • Rising to 3.4B by 2050
+                    </p>
+                  </div>
+                  <div className="relative w-full flex-1 min-h-[200px] rounded-xl overflow-hidden">
+                    <Image
+                      src="https://i.ibb.co/qYJqtZYP/image.png"
+                      alt="Total waste generated"
+                      fill
+                      className="object-contain rounded-xl"
+                    />
+                  </div>
+                </div>
+              </PixelCard>
             </motion.div>
             <motion.div
               variants={sectionVariants}
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, amount: 0.2 }}
-              className="rounded-2xl border border-white/10 bg-black/40 p-4 backdrop-blur-md"
             >
-              <p className="text-xs font-medium text-gray-400">CO₂ avoided</p>
-              <p className="mt-1 text-2xl font-semibold text-white">4.2 t</p>
-              <p className="mt-1 text-[11px] text-emerald-200">
-                Equivalent to taking 3 cars off the road for a year.
-              </p>
+              <PixelCard
+                variant="default"
+                colors="#10b981,#34d399,#6ee7b7"
+                gap={6}
+                speed={30}
+                className="h-full w-full p-4"
+              >
+                <div className="flex flex-col h-full">
+                  <div className="mb-4">
+                    <p className="text-xs font-medium text-gray-400">Mis-managed waste</p>
+                    <p className="mt-1 text-2xl font-semibold text-white">33%</p>
+                    <p className="mt-1 text-[11px] text-emerald-200">
+                      Globally mis-segregated • ~660M tonnes dumped or burned
+                    </p>
+                  </div>
+                  <div className="relative w-full flex-1 min-h-[200px] rounded-xl overflow-hidden">
+                    <Image
+                      src="https://i.ibb.co/SDrH90Rp/Projections-for-worldwide-mismanaged-plastic-waste-generated-within-50-km-of-coastlines.png"
+                      alt="Mis-managed waste"
+                      fill
+                      className="object-contain rounded-xl"
+                    />
+                  </div>
+                </div>
+              </PixelCard>
             </motion.div>
             <motion.div
               variants={sectionVariants}
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, amount: 0.2 }}
-              className="rounded-2xl border border-white/10 bg-black/40 p-4 backdrop-blur-md"
             >
-              <p className="text-xs font-medium text-gray-400">
-                Water preserved
-              </p>
-              <p className="mt-1 text-2xl font-semibold text-white">118k L</p>
-              <p className="mt-1 text-[11px] text-emerald-200">
-                Enough to supply 540 people for a day.
-              </p>
+              <PixelCard
+                variant="default"
+                colors="#10b981,#34d399,#6ee7b7"
+                gap={6}
+                speed={30}
+                className="h-full w-full p-4"
+              >
+                <div className="flex flex-col h-full">
+                  <div className="mb-4">
+                    <p className="text-xs font-medium text-gray-400">
+                      Projected by 2050
+                    </p>
+                    <p className="mt-1 text-2xl font-semibold text-white">3.8 B</p>
+                    <p className="mt-1 text-[11px] text-emerald-200">
+                      Billion tonnes if current trends continue • Action needed now
+                    </p>
+                  </div>
+                  <div className="relative w-full flex-1 min-h-[200px] rounded-xl overflow-hidden">
+                    <Image
+                      src="https://i.ibb.co/MkBS4syt/SHARE-Visualizing-One-Year-of-Global-Waste-V2.jpg"
+                      alt="Projected by 2050"
+                      fill
+                      className="object-contain rounded-xl"
+                    />
+                  </div>
+                </div>
+              </PixelCard>
             </motion.div>
           </div>
         </motion.section>
@@ -420,7 +480,7 @@ export default function LandingPage() {
               baseOpacity={0.2}
               baseRotation={-2}
             >
-              Builders who actually obsess over waste and climate.
+              Builders who actually obsess over waste management.
             </ScrollReveal>
             <motion.p
               variants={sectionVariants}
@@ -457,7 +517,7 @@ export default function LandingPage() {
                 </p>
                 <p className="mt-2 text-[11px] text-gray-300">
                   Owns the systems that turn raw AI power into a smooth,
-                  delightful climate product experience.
+                  delightful waste management experience.
                 </p>
               </motion.div>
             ))}
@@ -483,7 +543,7 @@ export default function LandingPage() {
               baseOpacity={0.2}
               baseRotation={2}
             >
-              Three taps from waste photo to climate insight.
+              Three taps from waste photo to disposal insight.
             </ScrollReveal>
           </div>
 
@@ -494,14 +554,13 @@ export default function LandingPage() {
                 description:
                   "Open “Scan now” from the dashboard or sidebar and snap the waste item in front of you.",
                 content: (
-                  <div className="flex h-full w-full flex-col items-center justify-center bg-black/30 p-4 text-xs text-emerald-50">
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
-                      capture
-                    </p>
-                    <p className="text-center text-[11px]">
-                      Camera-first flow tuned for waste — no confusing options,
-                      just point and scan.
-                    </p>
+                  <div className="relative w-full h-full rounded-xl overflow-hidden">
+                    <Image
+                      src="https://i.ibb.co/0R5HZQwH/Untitled-design-36.png"
+                      alt="Scan"
+                      fill
+                      className="object-cover rounded-xl"
+                    />
                   </div>
                 ),
               },
@@ -510,14 +569,13 @@ export default function LandingPage() {
                 description:
                   "Ecoverse breaks down impact into CO₂, water, degradability, harms, and better alternatives in plain language.",
                 content: (
-                  <div className="flex h-full w-full flex-col items-center justify-center bg-black/30 p-4 text-xs text-emerald-50">
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
-                      explain
-                    </p>
-                    <p className="text-center text-[11px]">
-                      We turn raw model output into friendly, actionable
-                      guidance instead of dense AI dumps.
-                    </p>
+                  <div className="relative w-full h-full rounded-xl overflow-hidden">
+                    <Image
+                      src="https://i.ibb.co/xtqKSrhY/Untitled-design-37.png"
+                      alt="Understand"
+                      fill
+                      className="object-cover rounded-xl"
+                    />
                   </div>
                 ),
               },
@@ -526,14 +584,13 @@ export default function LandingPage() {
                 description:
                   "Every scan updates your personal score, your city’s shared waste score, and the global leaderboard.",
                 content: (
-                  <div className="flex h-full w-full flex-col items-center justify-center bg-black/30 p-4 text-xs text-emerald-50">
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
-                      progress
-                    </p>
-                    <p className="text-center text-[11px]">
-                      A single feed that connects your decisions to measurable
-                      climate impact over time.
-                    </p>
+                  <div className="relative w-full h-full rounded-xl overflow-hidden">
+                    <Image
+                      src="https://i.ibb.co/7dQ0r5xm/Untitled-design-38.png"
+                      alt="Track"
+                      fill
+                      className="object-cover rounded-xl"
+                    />
                   </div>
                 ),
               },
@@ -550,7 +607,7 @@ export default function LandingPage() {
           className="mt-auto border-t border-white/10 pt-6 text-[11px] text-gray-400"
         >
           <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
-            <p>Built for campuses, cities and climate builders.</p>
+            <p>Built for campuses, cities and waste-conscious builders.</p>
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 href="/auth/login"

@@ -2,27 +2,25 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { Trophy, Medal, Award, Users, Zap, Target } from "lucide-react";
+import { Trophy, Medal, Award, Users, Zap, Target, X } from "lucide-react";
+import Image from "next/image";
 
 import DashboardShell from "@/components/dashboard-shell";
 import ProfilePicture from "@/components/ui/profile-picture";
 import { calculateEcoAwarenessScore } from "@/lib/utils";
 import ClassicLoader from "@/components/ui/classic-loader";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
-interface User {
-  id: string;
-  name: string;
-  subscriptionType: string;
-  subscriptionExpires?: string;
-}
-
-interface Analysis {
-  id: string;
-  imageUrl: string;
-  label: string;
-  category?: string;
-  type?: string;
-  createdAt: string;
+interface CityLeaderboard {
+  city: string;
+  totalAnalyses: number;
+  ecoAwarenessScore: number;
+  userCount: number;
 }
 
 interface LeaderboardUser {
@@ -30,15 +28,19 @@ interface LeaderboardUser {
   name: string;
   image?: string;
   profileShape?: string;
-  analyses: Analysis[];
+  analyses: any[];
   ecoAwarenessScore: number;
   analysisCount: number;
 }
 
 export default function LeaderboardPage() {
   const { data: session, status } = useSession();
-  const [leaderboardUsers, setLeaderboardUsers] = useState<LeaderboardUser[]>([]);
+  const [cities, setCities] = useState<CityLeaderboard[]>([]);
+  const [cityUsers, setCityUsers] = useState<LeaderboardUser[]>([]);
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -55,13 +57,36 @@ export default function LeaderboardPage() {
       const response = await fetch('/api/leaderboard');
       if (response.ok) {
         const data = await response.json();
-        setLeaderboardUsers(data);
+        setCities(data);
       }
     } catch (error) {
       console.error("Failed to load leaderboard data:", error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const loadCityUsers = async (city: string) => {
+    try {
+      setIsLoadingUsers(true);
+      setSelectedCity(city);
+      setIsModalOpen(true);
+      const response = await fetch(`/api/leaderboard?city=${encodeURIComponent(city)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setCityUsers(data);
+      }
+    } catch (error) {
+      console.error("Failed to load city users:", error);
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedCity(null);
+    setCityUsers([]);
   };
 
   if (isLoading) {
@@ -95,11 +120,11 @@ export default function LeaderboardPage() {
               <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-white">
-              Eco Champions Leaderboard
+              Eco Champs Leaderboard
             </h1>
           </div>
           <p className="text-gray-300 max-w-md mx-auto text-sm sm:text-base px-4">
-            Recognizing our top contributors who are making a difference through environmental analysis
+            Top cities making a difference through environmental analysis
           </p>
         </div>
         
@@ -110,23 +135,28 @@ export default function LeaderboardPage() {
               <div className="p-2 rounded-xl bg-gradient-to-br from-green-400 to-green-600">
                 <Target className="h-5 w-5 text-white" />
               </div>
-              <h2 className="text-xl font-semibold text-white">Top Eco Champions</h2>
+              <h2 className="text-xl font-semibold text-white">Top Cities</h2>
             </div>
             
             <div className="space-y-4">
-              {leaderboardUsers.map((user, index) => (
+              {cities.map((city, index) => (
                 <div 
-                  key={user.id}
-                  className="relative overflow-hidden flex items-center p-4 rounded-2xl transition-all duration-300 hover:scale-[1.01] glass-card"
+                  key={city.city}
+                  onClick={() => loadCityUsers(city.city!)}
+                  className="relative overflow-hidden flex items-center p-4 rounded-2xl transition-all duration-300 hover:scale-[1.01] glass-card cursor-pointer"
                 >
-                  
-                  {/* Content */}
                   <div className="relative z-10 flex items-center w-full">
                     {/* Rank */}
                     <div className="flex-shrink-0 w-12 text-center">
                       {index === 0 ? (
-                        <div className="mx-auto bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full w-8 h-8 flex items-center justify-center shadow-md">
-                          <Medal className="h-4 w-4 text-white" />
+                        <div className="mx-auto w-8 h-8 flex items-center justify-center">
+                          <Image
+                            src="https://i.ibb.co/5z3cjxC/6678583.png"
+                            alt="1st Place"
+                            width={32}
+                            height={32}
+                            className="object-contain"
+                          />
                         </div>
                       ) : index === 1 ? (
                         <div className="mx-auto bg-gradient-to-r from-gray-300 to-gray-400 rounded-full w-8 h-8 flex items-center justify-center shadow-md">
@@ -141,36 +171,12 @@ export default function LeaderboardPage() {
                       )}
                     </div>
                     
-                    {/* User avatar */}
-                    <div className="flex-shrink-0 ml-3 relative">
-                      <ProfilePicture
-                        src={user.image}
-                        alt={user.name || "User"}
-                        size="md"
-                        shape={(user as any).profileShape || "circle"}
-                        className={`${
-                          index === 0 ? "border-yellow-400" : 
-                          index === 1 ? "border-gray-300" : 
-                          index === 2 ? "border-orange-600" : "border-white"
-                        }`}
-                      />
-                      {index < 3 && (
-                        <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
-                          <Award className={`h-4 w-4 ${
-                            index === 0 ? "text-yellow-400" : 
-                            index === 1 ? "text-gray-400" : 
-                            "text-orange-600"
-                          }`} />
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* User info */}
+                    {/* City info */}
                     <div className="ml-4 flex-1">
-                      <h3 className="font-semibold text-white">{user.name || "Anonymous User"}</h3>
+                      <h3 className="font-semibold text-white">{city.city}</h3>
                       <div className="flex items-center gap-2 mt-1">
-                        <Zap className="h-3 w-3 text-blue-400" />
-                        <p className="text-sm text-gray-300">{user.analysisCount} analyses</p>
+                        <Users className="h-3 w-3 text-blue-400" />
+                        <p className="text-sm text-gray-300">{city.userCount} users • {city.totalAnalyses} analyses</p>
                       </div>
                     </div>
                     
@@ -182,14 +188,14 @@ export default function LeaderboardPage() {
                         index === 2 ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : 
                         "bg-green-500/20 text-green-400 border border-green-500/30"
                       }`}>
-                        {user.ecoAwarenessScore} pts
+                        {city.ecoAwarenessScore} pts
                       </div>
                     </div>
                   </div>
                 </div>
               ))}
               
-              {leaderboardUsers.length === 0 && (
+              {cities.length === 0 && (
                 <div className="text-center py-8">
                   <p className="text-gray-500">No analysis data available yet. Be the first to contribute!</p>
                 </div>
@@ -197,6 +203,123 @@ export default function LeaderboardPage() {
             </div>
           </div>
         </div>
+
+        {/* City Users Modal */}
+        <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
+          <DialogContent className="glass-card max-w-2xl max-h-[80vh] overflow-y-auto border border-white/10">
+            <DialogHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-gradient-to-br from-green-400 to-green-600">
+                    <Users className="h-5 w-5 text-white" />
+                  </div>
+                  <DialogTitle className="text-xl font-semibold text-white">
+                    Top Users in {selectedCity}
+                  </DialogTitle>
+                </div>
+                <button
+                  onClick={handleCloseModal}
+                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-all"
+                >
+                  <X className="h-5 w-5 text-white" />
+                </button>
+              </div>
+            </DialogHeader>
+            
+            <div className="mt-4 space-y-4">
+              {isLoadingUsers ? (
+                <div className="flex items-center justify-center py-8">
+                  <ClassicLoader size="md" />
+                </div>
+              ) : (
+                <>
+                  {cityUsers.map((user, index) => (
+                    <div 
+                      key={user.id}
+                      className="relative overflow-hidden flex items-center p-4 rounded-2xl transition-all duration-300 hover:scale-[1.01] glass-card"
+                    >
+                      <div className="relative z-10 flex items-center w-full">
+                        {/* Rank */}
+                        <div className="flex-shrink-0 w-12 text-center">
+                          {index === 0 ? (
+                            <div className="mx-auto w-8 h-8 flex items-center justify-center">
+                              <Image
+                                src="https://i.ibb.co/5z3cjxC/6678583.png"
+                                alt="1st Place"
+                                width={32}
+                                height={32}
+                                className="object-contain"
+                              />
+                            </div>
+                          ) : index === 1 ? (
+                            <div className="mx-auto bg-gradient-to-r from-gray-300 to-gray-400 rounded-full w-8 h-8 flex items-center justify-center shadow-md">
+                              <Medal className="h-4 w-4 text-white" />
+                            </div>
+                          ) : index === 2 ? (
+                            <div className="mx-auto bg-gradient-to-r from-orange-600 to-orange-700 rounded-full w-8 h-8 flex items-center justify-center shadow-md">
+                              <Medal className="h-4 w-4 text-white" />
+                            </div>
+                          ) : (
+                            <span className="text-lg font-semibold text-gray-300">{index + 1}</span>
+                          )}
+                        </div>
+                        
+                        {/* User avatar */}
+                        <div className="flex-shrink-0 ml-3 relative">
+                          <ProfilePicture
+                            src={user.image}
+                            alt={user.name || "User"}
+                            size="md"
+                            shape={(user as any).profileShape || "circle"}
+                            className={`${
+                              index === 0 ? "border-yellow-400" : 
+                              index === 1 ? "border-gray-300" : 
+                              index === 2 ? "border-orange-600" : "border-white"
+                            }`}
+                          />
+                          {index < 3 && index !== 0 && (
+                            <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
+                              <Award className={`h-4 w-4 ${
+                                index === 1 ? "text-gray-400" : "text-orange-600"
+                              }`} />
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* User info */}
+                        <div className="ml-4 flex-1">
+                          <h3 className="font-semibold text-white">{user.name || "Anonymous User"}</h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Zap className="h-3 w-3 text-blue-400" />
+                            <p className="text-sm text-gray-300">{user.analysisCount} analyses</p>
+                          </div>
+                        </div>
+                        
+                        {/* Eco awareness score badge */}
+                        <div className="flex-shrink-0">
+                          <div className={`px-4 py-2 rounded-xl text-sm font-semibold ${
+                            index === 0 ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" : 
+                            index === 1 ? "bg-white/10 text-gray-300 border border-white/20" : 
+                            index === 2 ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : 
+                            "bg-green-500/20 text-green-400 border border-green-500/30"
+                          }`}>
+                            {user.ecoAwarenessScore} pts
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {cityUsers.length === 0 && !isLoadingUsers && (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No users found in this city.</p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardShell>
   );

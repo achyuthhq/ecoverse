@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { 
   ArrowLeft, 
   Share2, 
@@ -40,6 +41,7 @@ import ClassicLoader from "@/components/ui/classic-loader";
 import AnalysisChat from "@/components/analysis-chat";
 import ShareAnalysisModal from "@/components/share-analysis-modal";
 import CityOnboardingModal from "@/components/city-onboarding-modal";
+import { ShaderAnimation } from "@/components/shader-animation";
 
 interface Analysis {
   id: string;
@@ -91,7 +93,7 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
     current: number;
     total: number;
     message: string;
-  }>({ current: 0, total: 4, message: "Initializing..." });
+  }>({ current: 0, total: 4, message: "Uploading..." });
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const router = useRouter();
   const hasFetchedRef = useRef(false);
@@ -130,7 +132,7 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
     console.log("[ANALYSIS] Analysis ID:", params.id);
     try {
       // Step 1: Loading analysis data
-      setLoadingSteps({ current: 1, total: 4, message: "Loading analysis data..." });
+      setLoadingSteps({ current: 1, total: 4, message: "Uploading..." });
       console.log("[ANALYSIS] Step 1: Requesting analysis data from /api/analyses/" + params.id);
       
       const response = await fetch(`/api/analyses/${params.id}`);
@@ -150,7 +152,7 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
       setAnalysis(data);
       
       // Step 2: Item detected
-      setLoadingSteps({ current: 2, total: 4, message: `Item detected: ${data.label || 'Unknown item'}` });
+      setLoadingSteps({ current: 2, total: 4, message: "Recognizing..." });
       console.log("[ANALYSIS] Step 2: Item detected -", data.label || 'Unknown item');
       await new Promise(resolve => setTimeout(resolve, 800)); // Small delay
       
@@ -188,7 +190,7 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
       // Step 3: Processing with AI (only if no existing data)
       if (!existingAiData) {
         console.log("[ANALYSIS] No existing AI data found, generating new AI-enhanced data");
-        setLoadingSteps({ current: 3, total: 4, message: "Processing with AI..." });
+        setLoadingSteps({ current: 3, total: 4, message: "Thinking..." });
         // Generate AI-enhanced data
         await generateAIEnhancedData(data);
       }
@@ -223,7 +225,7 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
       console.log("[REGENERATE] Starting AI-enhanced data generation...");
       
       // Step 3.1: Analyzing environmental impact
-      setLoadingSteps({ current: 3, total: 4, message: "Analyzing environmental impact..." });
+      setLoadingSteps({ current: 3, total: 4, message: "Thinking..." });
       console.log("[REGENERATE] Step 3.1: Analyzing environmental impact");
       
       // Create enhanced prompt for AI analysis with more environmental parameters
@@ -285,7 +287,7 @@ IMPORTANT:
 - Percentages in composition must add up to 100`;
 
       // Step 3.2: Generating recommendations
-      setLoadingSteps({ current: 3, total: 4, message: "Generating recommendations..." });
+      setLoadingSteps({ current: 3, total: 4, message: "Generating..." });
       console.log("[REGENERATE] Step 3.2: Generating recommendations");
 
       // Get model from analysis if stored, otherwise default to openai
@@ -350,52 +352,20 @@ IMPORTANT:
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0c0c0c' }}>
-        <div className="text-center max-w-lg mx-auto p-8">
-          {/* Main Loading Animation - Perfectly centered */}
-          <div className="flex justify-center items-center mb-8">
-            <div className="w-32 h-32 flex items-center justify-center">
-              <ClassicLoader size="lg" />
-            </div>
-          </div>
-          
-          {/* AI Processing Message */}
-          <div className="space-y-4 mb-10">
-            <h2 className="text-2xl font-semibold text-white">AI Analysis in Progress</h2>
-            <p className="text-gray-300 text-base font-medium">{loadingSteps.message}</p>
-          </div>
-          
-          {/* Progress Steps - Icons Only */}
-          <div className="flex justify-center space-x-6">
-            <div className={`p-3 rounded-full transition-all duration-300 ${
-              loadingSteps.current >= 1 
-                ? "bg-emerald-500/30 text-emerald-400 shadow-lg shadow-emerald-500/20 border border-emerald-500/40" 
-                : "bg-white/5 text-gray-500 border border-white/10"
-            }`}>
-              <Search className="h-5 w-5" />
-            </div>
-            <div className={`p-3 rounded-full transition-all duration-300 ${
-              loadingSteps.current >= 2 
-                ? "bg-emerald-500/30 text-emerald-400 shadow-lg shadow-emerald-500/20 border border-emerald-500/40" 
-                : "bg-white/5 text-gray-500 border border-white/10"
-            }`}>
-              <Zap className="h-5 w-5" />
-            </div>
-            <div className={`p-3 rounded-full transition-all duration-300 ${
-              loadingSteps.current >= 3 
-                ? "bg-emerald-500/30 text-emerald-400 shadow-lg shadow-emerald-500/20 border border-emerald-500/40" 
-                : "bg-white/5 text-gray-500 border border-white/10"
-            }`}>
-              <Brain className="h-5 w-5" />
-            </div>
-            <div className={`p-3 rounded-full transition-all duration-300 ${
-              loadingSteps.current >= 4 
-                ? "bg-emerald-500/30 text-emerald-400 shadow-lg shadow-emerald-500/20 border border-emerald-500/40" 
-                : "bg-white/5 text-gray-500 border border-white/10"
-            }`}>
-              <CheckCircle2 className="h-5 w-5" />
-            </div>
-          </div>
+      <div className="fixed inset-0 w-screen h-screen z-50">
+        <ShaderAnimation />
+        <div className="absolute inset-0 flex items-center justify-center z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-center px-4"
+          >
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">AI Analysis in Progress</h2>
+            <p className="text-lg sm:text-xl md:text-2xl font-semibold text-emerald-300/90 tracking-wide">
+              {loadingSteps.message}
+            </p>
+          </motion.div>
         </div>
       </div>
     );

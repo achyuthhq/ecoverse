@@ -162,14 +162,20 @@ const toolsList = [
 ];
 
 const modelOptions = {
-  'openai': 'GPT-4o',
-  'openai-gpt5': 'GPT-5',
-  'claude': 'Claude 4.5',
-  'mistral': 'Mistral Large 2.0',
-  'gemini': 'Gemini 2.5',
+  'openai': 'GPT-5',
+  'openai-large': 'GPT-5.2 Max',
+  'claude': 'Claude 4.5 Sonnet',
+  'claude-large': 'Claude 4.5 Opus',
+  'gemini': 'Gemini 3.0 Pro',
+  'gemini-large': 'Gemini 3.0 Ultra',
   'gemini-search': 'Gemini Search',
+  'mistral': 'Mistral 7B',
   'grok': 'Grok 4',
-  'perplexity-fast': 'Perplexity',
+  'perplexity-fast': 'Perplexity Sonar',
+  'perplexity-reasoning': 'Perplexity Reasoning',
+  'deepseek': 'DeepSeek R1',
+  'kimi-k2-thinking': 'Kimi K2',
+  'openai-fast': 'GPT-4o Mini',
 };
 
 interface PromptBoxProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {

@@ -29,18 +29,13 @@ export const StickyScroll = ({
   const cardLength = content.length;
 
   useMotionValueEvent(scrollYProgress, "change", (latest) => {
-    const cardsBreakpoints = content.map((_, index) => index / cardLength);
-    const closestBreakpointIndex = cardsBreakpoints.reduce(
-      (acc, breakpoint, index) => {
-        const distance = Math.abs(latest - breakpoint);
-        if (distance < Math.abs(latest - cardsBreakpoints[acc])) {
-          return index;
-        }
-        return acc;
-      },
-      0
+    // Create breakpoints that evenly divide the scroll progress
+    const breakpointSize = 1 / cardLength;
+    const calculatedIndex = Math.min(
+      Math.floor(latest / breakpointSize),
+      cardLength - 1
     );
-    setActiveCard(closestBreakpointIndex);
+    setActiveCard(calculatedIndex);
   });
 
   const backgroundColors = ["#020617", "#020617", "#020617"];
@@ -64,7 +59,7 @@ export const StickyScroll = ({
       animate={{
         backgroundColor: backgroundColors[activeCard % backgroundColors.length],
       }}
-      className="relative flex h-[26rem] justify-center space-x-10 overflow-y-auto rounded-2xl border border-white/10 bg-black/40 p-6 backdrop-blur-xl"
+      className="relative flex h-[32rem] justify-center space-x-10 overflow-y-auto rounded-2xl border border-white/10 bg-black/40 p-6 backdrop-blur-xl"
       ref={ref}
     >
       <div className="relative flex items-start px-2 sm:px-4">
@@ -87,7 +82,7 @@ export const StickyScroll = ({
               </motion.p>
             </div>
           ))}
-          <div className="h-24" />
+          <div className="h-32" />
         </div>
       </div>
       <div

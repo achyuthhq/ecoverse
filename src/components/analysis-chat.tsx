@@ -157,38 +157,54 @@ Just ask me anything about this analysis, and I'll provide detailed, helpful inf
     setAnalysisData(data);
     
     try {
-      // Create concise, precise prompt for the API
-      const prompt = `Provide a concise environmental analysis for: ${data.label}
+      // Create comprehensive, detailed prompt for the API
+      const prompt = `Provide a comprehensive and detailed environmental analysis for: ${data.label}
 
 **Item Details:**
 - Material: ${data.materialType}
 - Category: ${data.category}
 - Degradability: ${data.degradability}
 
-**Response Format (be precise, straight to the point):**
+**Response Format (be comprehensive, detailed, and informative):**
 
 # ${data.label} - Environmental Analysis
 
-**Material:** [Brief material composition - 1 sentence]
+**Material:** [Detailed material composition and properties - 2-3 sentences]
 **Category:** ${data.category}
-**Biodegradability:** [Yes/No + time if known]
+**Biodegradability:** [Yes/No + detailed explanation with timeframes if known]
 
 ## Environmental Impact
-• [3-4 specific impacts, one line each]
+- [First detailed impact with explanation]
+- [Second detailed impact with explanation]
+- [Third detailed impact with explanation]
+- [Fourth impact if relevant]
 
 ## Health Risks  
-• [2-3 specific risks, one line each]
+- [First detailed risk with explanation]
+- [Second detailed risk with explanation]
+- [Third risk if relevant]
 
 ## Disposal Method
-• [Step-by-step, concise instructions]
+- [Step 1 with detailed instructions]
+- [Step 2 with detailed instructions]
+- [Step 3 with detailed instructions]
+- [Additional steps if needed]
 
 ## Eco-Friendly Alternatives
-• [3-4 specific alternatives, one line each]
+- [First alternative with detailed explanation]
+- [Second alternative with detailed explanation]
+- [Third alternative with detailed explanation]
+- [Fourth alternative if relevant]
 
 ## Action Plan
-• [2-3 immediate actions, one line each]
+- [First detailed action with explanation]
+- [Second detailed action with explanation]
+- [Third action if relevant]
 
-**Keep it concise, precise, and actionable. No fluff. Maximum 200 words total.`;
+## Additional Recommendations
+- [Any additional relevant recommendations or insights]
+
+**IMPORTANT: Use markdown format with each bullet point on a NEW LINE. Use "- " for bullet points, NOT "•". Be comprehensive, detailed, and provide thorough explanations. Include all relevant environmental, health, and disposal information. Aim for 400-600 words to provide a complete analysis.`;
       
       // Call Pollinations API
       // Map model selection to actual API parameter
@@ -219,7 +235,29 @@ Just ask me anything about this analysis, and I'll provide detailed, helpful inf
       let cleanResponse = responseText;
       if (responseText.includes("```")) {
         cleanResponse = responseText.replace(/```json\s*([\s\S]*?)\s*```/g, "$1");
+        cleanResponse = cleanResponse.replace(/```\s*([\s\S]*?)\s*```/g, "$1");
       }
+      
+      // Ensure response is a string and handle any object issues
+      if (typeof cleanResponse !== 'string') {
+        try {
+          cleanResponse = JSON.stringify(cleanResponse);
+        } catch {
+          cleanResponse = String(cleanResponse);
+        }
+      }
+      
+      // Aggressively remove [object Object] patterns (case insensitive, with variations)
+      cleanResponse = cleanResponse
+        .replace(/\[object\s+Object\]/gi, '')
+        .replace(/\[object\s+object\]/gi, '')
+        .replace(/\[Object\]/g, '')
+        .replace(/object Object/gi, '')
+        .replace(/\s*•\s*\[object\s+Object\]\s*/gi, '')
+        .replace(/\s*\[object\s+Object\]\s*•\s*/gi, '')
+        .replace(/\s*\[object\s+Object\]\s*/gi, ' ')
+        .replace(/\s{2,}/g, ' ') // Replace multiple spaces with single space
+        .trim();
       
       // Format the response for better readability
       cleanResponse = formatResponse(cleanResponse);
@@ -265,25 +303,113 @@ Just ask me anything about this analysis, and I'll provide detailed, helpful inf
   };
 
   // Format response for better readability - simplified for markdown rendering
-  const formatResponse = (text: string): string => {
+  const formatResponse = (text: string | any): string => {
+    // Ensure we have a string
+    let textStr: string;
+    if (typeof text !== 'string') {
+      try {
+        textStr = JSON.stringify(text);
+      } catch {
+        textStr = String(text);
+      }
+    } else {
+      textStr = text;
+    }
+    
     // Clean up the response
-    let formattedText = text
+    let formattedText = textStr
+      // Aggressively remove [object Object] patterns (case insensitive, with variations)
+      .replace(/\[object\s+Object\]/gi, '')
+      .replace(/\[object\s+object\]/gi, '')
+      .replace(/\[Object\]/g, '')
+      .replace(/object Object/gi, '')
+      .replace(/\s*•\s*\[object\s+Object\]\s*/gi, '')
+      .replace(/\s*\[object\s+Object\]\s*•\s*/gi, '')
+      .replace(/\s*\[object\s+Object\]\s*/gi, ' ')
       // Remove any markdown code blocks if present
       .replace(/```json\s*([\s\S]*?)\s*```/g, "$1")
       .replace(/```\s*([\s\S]*?)\s*```/g, "$1")
       
-      // Convert bullet points that start with • or - to proper markdown lists
-      .replace(/^([•-])\s+(.+)$/gm, '- $2')
+      // Convert bullet points that start with • to proper markdown lists (preserve line breaks)
+      .replace(/^([•])\s+(.+)$/gm, '- $2')
+      
+      // Split on " - " pattern when it appears to separate bullet points
+      // This handles cases like "text - next point - another point"
+      // Look for pattern: text ending with period/colon followed by " - " and capital letter
+      .replace(/([.!?:])\s*-\s+(?=[A-Z])/g, '$1\n- ')
+      
+      // Split on standalone " - " pattern (most common case)
+      // This handles: "sentence - next sentence - another sentence"
+      .replace(/\s+-\s+(?=[A-Z][a-z])/g, '\n- ')
+      
+      // Split bullet points that are on the same line (e.g., "• point1 • point2")
+      .replace(/([^\n])\s*•\s+/g, '$1\n- ')
+      
+      // Ensure bullet points are on separate lines - handle cases where they're on same line
+      // First, handle • bullets
+      .replace(/\s*•\s+/g, '\n- ')
+      // Then ensure - bullets are properly formatted
+      .replace(/^-\s+/gm, '- ')
+      
+      // Clean up lines that only contain [object Object] or whitespace
+      .replace(/^\s*\[object\s+Object\]\s*$/gim, '')
       
       // Ensure proper spacing for headings
       .replace(/\n+(#{1,2} )/g, '\n\n$1')
       .replace(/^(#{1,2} .+)$/gm, '$1\n')
       
-      // Ensure proper spacing for lists
-      .replace(/\n(- .+)\n([^-])/g, '\n$1\n\n$2')
+      // Process line by line to split any remaining multi-bullet lines
+      .split('\n')
+      .map(line => {
+        // If line starts with "- " it's already a bullet, keep it
+        if (line.trim().startsWith('- ')) {
+          return line.replace(/[ \t]+/g, ' ').trim();
+        }
+        
+        // If line contains " - " pattern multiple times, split it aggressively
+        if (line.includes(' - ')) {
+          // Count occurrences of " - " followed by capital letter
+          const matches = line.match(/\s+-\s+(?=[A-Z])/g);
+          if (matches && matches.length > 0) {
+            // Split on " - " when followed by capital letter
+            const parts = line.split(/\s+-\s+(?=[A-Z])/);
+            if (parts.length > 1) {
+              // First part might be a heading or regular text
+              let result = parts[0].trim();
+              // Rest become bullets
+              const bulletParts = parts.slice(1)
+                .map(p => {
+                  const trimmed = p.trim();
+                  // If it doesn't start with "- ", add it
+                  return trimmed.startsWith('- ') ? trimmed : `- ${trimmed}`;
+                })
+                .join('\n');
+              
+              // Only add bullets if we have content
+              if (bulletParts.trim()) {
+                result += '\n' + bulletParts;
+              }
+              return result;
+            }
+          }
+        }
+        
+        return line.replace(/[ \t]+/g, ' ').trim();
+      })
+      .join('\n')
+      
+      // Ensure each list item is on its own line and has proper spacing
+      .replace(/\n(- .+)\n([^-#\n])/g, '\n$1\n\n$2')
+      .replace(/(- .+)\s+(- .+)/g, '$1\n$2')
+      
+      // Ensure list items don't have extra content on the same line
+      .replace(/^(- .+?)\s+(?=- |#|$)/gm, '$1')
       
       // Clean up excessive blank lines
       .replace(/\n{4,}/g, '\n\n\n')
+      
+      // Ensure list items have proper spacing
+      .replace(/\n(- .+)\n(- .+)/g, '\n$1\n$2')
       
       // Clean up trailing whitespace
       .trim();
@@ -313,21 +439,38 @@ Just ask me anything about this analysis, and I'll provide detailed, helpful inf
       // Get current analysis data (either from props or fetched data)
       const currentAnalysisData = analysisData || initialAnalysisData;
       
-      // Helper to format arrays/strings
+      // Helper to format arrays/strings - recursively handles nested objects
       const formatField = (field: any): string => {
         if (!field) return 'Not specified';
-        if (Array.isArray(field)) return field.join(', ');
-        if (typeof field === 'string') {
-          try {
-            const parsed = JSON.parse(field);
-            if (Array.isArray(parsed)) return parsed.join(', ');
-            return String(parsed);
-          } catch {
-            return field;
+        
+        const formatValue = (value: any): string => {
+          if (value === null || value === undefined) return 'Not specified';
+          if (typeof value === 'string') return value;
+          if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+          if (Array.isArray(value)) {
+            return value.map(formatValue).join(', ');
           }
-        }
-        if (typeof field === 'object') return JSON.stringify(field);
-        return String(field);
+          if (typeof value === 'object') {
+            // For objects, extract meaningful values
+            if (value.reduce !== undefined || value.reuse !== undefined || value.recycle !== undefined) {
+              // Handle recommendations object
+              const parts: string[] = [];
+              if (value.reduce) parts.push(`Reduce: ${value.reduce}`);
+              if (value.reuse) parts.push(`Reuse: ${value.reuse}`);
+              if (value.recycle) parts.push(`Recycle: ${value.recycle}`);
+              return parts.length > 0 ? parts.join('; ') : 'Not specified';
+            }
+            // For other objects, try to extract string values
+            const values = Object.values(value).filter(v => v !== null && v !== undefined);
+            if (values.length > 0) {
+              return values.map(formatValue).join(', ');
+            }
+            return 'Not specified';
+          }
+          return String(value);
+        };
+        
+        return formatValue(field);
       };
       
       // Create detailed context about the specific analysis
@@ -357,7 +500,8 @@ ${analysisContext}
 - Be specific to this exact item
 - Keep response under 150 words
 - Use clear formatting with **bold** for key points
-- Use bullet points (•) for lists
+- Use markdown bullet points (-) for lists, with EACH bullet point on a NEW LINE
+- Format: "- First point\n- Second point\n- Third point"
 - Be actionable and practical
 
 **Response:**`;
@@ -391,7 +535,29 @@ ${analysisContext}
       let cleanResponse = responseText;
       if (responseText.includes("```")) {
         cleanResponse = responseText.replace(/```json\s*([\s\S]*?)\s*```/g, "$1");
+        cleanResponse = cleanResponse.replace(/```\s*([\s\S]*?)\s*```/g, "$1");
       }
+      
+      // Ensure response is a string and handle any object issues
+      if (typeof cleanResponse !== 'string') {
+        try {
+          cleanResponse = JSON.stringify(cleanResponse);
+        } catch {
+          cleanResponse = String(cleanResponse);
+        }
+      }
+      
+      // Aggressively remove [object Object] patterns (case insensitive, with variations)
+      cleanResponse = cleanResponse
+        .replace(/\[object\s+Object\]/gi, '')
+        .replace(/\[object\s+object\]/gi, '')
+        .replace(/\[Object\]/g, '')
+        .replace(/object Object/gi, '')
+        .replace(/\s*•\s*\[object\s+Object\]\s*/gi, '')
+        .replace(/\s*\[object\s+Object\]\s*•\s*/gi, '')
+        .replace(/\s*\[object\s+Object\]\s*/gi, ' ')
+        .replace(/\s{2,}/g, ' ') // Replace multiple spaces with single space
+        .trim();
       
       // Format the response for better readability
       cleanResponse = formatResponse(cleanResponse);
@@ -493,13 +659,6 @@ ${analysisContext}
               >
                 <div                 className="relative overflow-hidden text-center glass-card p-6 rounded-2xl shadow-lg border border-white/10">
                   {/* Decorative elements */}
-                  <div className="absolute top-3 right-3 opacity-20">
-                    <Sparkles className="h-4 w-4 text-white" />
-                  </div>
-                  <div className="absolute bottom-3 left-3 opacity-20">
-                    <Zap className="h-3 w-3 text-white" />
-                  </div>
-                  
                   {/* Content */}
                   <div className="relative z-10">
                     <div className="mb-4">
@@ -553,8 +712,10 @@ ${analysisContext}
                 }`}
               >
                   <div
-                    className={`flex items-start gap-3 max-w-[90%] ${
-                      message.role === "user" ? "flex-row-reverse" : "flex-row"
+                    className={`flex items-start gap-3 ${
+                      message.role === "user" 
+                        ? "flex-row-reverse max-w-[90%]" 
+                        : "flex-row max-w-[85%] sm:max-w-[75%] md:max-w-[65%]"
                     }`}
                   >
                     {/* Icon for the message */}
@@ -579,7 +740,7 @@ ${analysisContext}
                       {message.role === "user" ? (
                         <p className="whitespace-pre-wrap text-xs font-montserrat text-white">{message.content}</p>
                       ) : (
-                        <div className="max-w-none font-montserrat">
+                        <div className="max-w-full font-montserrat">
                           <ReactMarkdown
                             components={{
                               h1: ({node, ...props}) => <h1 className="text-xl font-bold text-white mb-4 mt-0 pb-3 border-b-2 border-white/30" {...props} />,
@@ -590,15 +751,21 @@ ${analysisContext}
                               ul: ({node, ...props}) => <ul className="my-3 space-y-2 pl-0 list-none" {...props} />,
                               ol: ({node, ...props}) => <ol className="my-3 space-y-2 pl-0 list-none" {...props} />,
                               li: ({node, children, ...props}) => {
-                                const content = Array.isArray(children) ? children.join('') : String(children || '');
-                                // Handle bullet points that start with • or -
-                                const isBullet = content.trim().startsWith('•') || content.trim().startsWith('-');
-                                const cleanContent = isBullet ? content.trim().substring(1).trim() : content;
+                                // Handle children properly - ReactMarkdown passes children as an array
+                                const content = React.Children.toArray(children)
+                                  .map((child: any) => {
+                                    if (typeof child === 'string') return child;
+                                    if (child?.props?.children) {
+                                      return React.Children.toArray(child.props.children).join('');
+                                    }
+                                    return String(child);
+                                  })
+                                  .join('');
                                 
                                 return (
-                                  <li className="text-sm text-gray-300 my-2 leading-relaxed flex items-center gap-2">
-                                    <span className="text-white font-bold flex-shrink-0 leading-none">•</span>
-                                    <span className="flex-1">{cleanContent}</span>
+                                  <li className="text-sm text-gray-300 my-2 leading-relaxed flex items-start gap-2">
+                                    <span className="text-white font-bold flex-shrink-0 leading-none mt-0.5">•</span>
+                                    <span className="flex-1">{content}</span>
                                   </li>
                                 );
                               },
