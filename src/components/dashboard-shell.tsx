@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { createContext, useContext, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import ClassicLoader from "@/components/ui/classic-loader";
@@ -10,6 +10,20 @@ import UploadModal from "@/components/upload-modal";
 interface DashboardShellProps {
   children: React.ReactNode;
 }
+
+interface UploadModalContextValue {
+  openUploadModal: () => void;
+}
+
+const UploadModalContext = createContext<UploadModalContextValue | undefined>(undefined);
+
+export const useUploadModal = () => {
+  const context = useContext(UploadModalContext);
+  if (!context) {
+    throw new Error("useUploadModal must be used within DashboardShell");
+  }
+  return context;
+};
 
 const DashboardShell = ({ children }: DashboardShellProps) => {
   const { data: session, status } = useSession();
@@ -34,12 +48,18 @@ const DashboardShell = ({ children }: DashboardShellProps) => {
     setIsUploadModalOpen(false);
   };
 
+  const handleOpenModal = () => {
+    setIsUploadModalOpen(true);
+  };
+
   return (
-    <EcoverseSidebar onOpenUploadModal={() => setIsUploadModalOpen(true)}>
+    <UploadModalContext.Provider value={{ openUploadModal: handleOpenModal }}>
+      <EcoverseSidebar onOpenUploadModal={handleOpenModal}>
       {children}
       {/* Upload Modal */}
       <UploadModal isOpen={isUploadModalOpen} onClose={handleCloseModal} />
     </EcoverseSidebar>
+    </UploadModalContext.Provider>
   );
 };
 

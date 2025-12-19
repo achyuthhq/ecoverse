@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { TrendingUp, Zap, Award, Sparkles, Globe2 } from "lucide-react";
+import { TrendingUp, Zap, Award, Sparkles, Globe2, Camera } from "lucide-react";
 
-import DashboardShell from "@/components/dashboard-shell";
+import DashboardShell, { useUploadModal } from "@/components/dashboard-shell";
 import ImageUpload from "@/components/image-upload";
 import { Button } from "@/components/ui/button";
 import AnalysisHistory from "@/components/analysis-history";
@@ -48,7 +48,7 @@ interface Analysis {
   updatedAt: Date;
 }
 
-export default function DashboardPage() {
+function DashboardContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
@@ -60,6 +60,7 @@ export default function DashboardPage() {
   const [savingCity, setSavingCity] = useState(false);
   const { toast } = useToast();
   const [selectedPoint, setSelectedPoint] = useState<{ lat: number; lng: number; name: string } | null>(null);
+  const { openUploadModal } = useUploadModal();
 
   useEffect(() => {
     if (status === "loading") return;
@@ -232,12 +233,12 @@ export default function DashboardPage() {
   }
 
   const ecoAwarenessScore = calculateEcoAwarenessScore(analyses);
-  const recentAnalyses = analyses.slice(0, 5);
+  const recentAnalyses = analyses.slice(0, 3);
   const firstName = session.user.name?.split(' ')[0] || 'User';
   const greeting = getRandomGreeting(firstName);
 
   return (
-    <DashboardShell>
+    <>
       {/* City onboarding popup */}
       <CityOnboardingModal />
 
@@ -321,7 +322,17 @@ export default function DashboardPage() {
               </h2>
             </div>
             <p className="text-gray-300 text-xs mb-4">Take a photo or upload an image of waste items for instant analysis.</p>
-            <ImageUpload />
+            <div className="mb-4 flex justify-start">
+              <Button
+                type="button"
+                onClick={openUploadModal}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-white text-gray-900 hover:bg-gray-100 shadow-md hover:shadow-lg transition-all duration-300 text-xs font-semibold px-3 py-2 border-0"
+              >
+                <Camera className="h-4 w-4" />
+                <span>Scan Now</span>
+              </Button>
+            </div>
+            <ImageUpload hideBrowseButton />
           </div>
         </div>
 
@@ -387,7 +398,8 @@ export default function DashboardPage() {
               </Button>
             </div>
 
-            <div className="relative rounded-xl border border-white/10 bg-[#111111] overflow-hidden h-56">
+            <div className="relative rounded-xl border border-white/10 bg-[#111111] overflow-hidden h-64 md:h-80 flex items-center justify-center">
+              <div className="w-full max-w-xl">
               <Globe
                 backgroundColor="rgba(0,0,0,0)"
                 globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
@@ -395,8 +407,8 @@ export default function DashboardPage() {
                 showAtmosphere={true}
                 atmosphereColor="deepskyblue"
                 atmosphereAltitude={0.25}
-                width={400}
-                height={220}
+                  width={520}
+                  height={320}
                 pointsData={selectedPoint ? [selectedPoint] : []}
                 pointLat={(d: any) => d.lat}
                 pointLng={(d: any) => d.lng}
@@ -407,6 +419,7 @@ export default function DashboardPage() {
                   handlePickCityFromCoords(point.lat, point.lng);
                 }}
               />
+              </div>
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#0c0c0c] to-transparent pt-6 pb-3 px-4 pointer-events-none">
                 <p className="text-[11px] text-gray-300">
                   Tap anywhere on the globe to detect the nearest city. We use real map data; no mock locations.
@@ -513,6 +526,14 @@ export default function DashboardPage() {
           </div>
         </DialogContent>
       </Dialog>
+    </>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <DashboardShell>
+      <DashboardContent />
     </DashboardShell>
   );
 } 

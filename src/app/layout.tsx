@@ -5,6 +5,7 @@ import { Montserrat } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import AuthProvider from "@/components/auth-provider";
+import TrashGate from "@/components/trash-gate";
 import { cn } from "@/lib/utils";
 
 const montserrat = Montserrat({ 
@@ -46,6 +47,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
+            <TrashGate />
             {children}
             <Toaster />
           </AuthProvider>

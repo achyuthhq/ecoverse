@@ -98,7 +98,7 @@ export default function LeaderboardPage() {
               Eco Champions Leaderboard
             </h1>
           </div>
-          <p className="text-gray-600 max-w-md mx-auto text-sm sm:text-base px-4">
+          <p className="text-gray-300 max-w-md mx-auto text-sm sm:text-base px-4">
             Recognizing our top contributors who are making a difference through environmental analysis
           </p>
         </div>

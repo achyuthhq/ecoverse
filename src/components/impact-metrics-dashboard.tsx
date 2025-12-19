@@ -55,47 +55,76 @@ export default function ImpactMetricsDashboard({ analyses, city, cityTotalAnalys
 
   // Prepare chart data based on selected metric
   const chartData = useMemo(() => {
+    let data: { month: string; value: number; label: string }[] = [];
+
     if (selectedMetric.value === 'co2') {
-      return metrics.monthlyData.map(item => ({
+      data = metrics.monthlyData.map(item => ({
         month: new Date(item.month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
         value: item.co2,
         label: 'CO₂ Saved (kg)'
       }));
     } else if (selectedMetric.value === 'water') {
-      return metrics.monthlyData.map(item => ({
+      data = metrics.monthlyData.map(item => ({
         month: new Date(item.month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
         value: item.water,
         label: 'Water Saved (L)'
       }));
     } else if (selectedMetric.value === 'analyses') {
-      return metrics.monthlyData.map(item => ({
+      data = metrics.monthlyData.map(item => ({
         month: new Date(item.month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
         value: item.analyses,
         label: 'Analyses Count'
       }));
     } else if (selectedMetric.value === 'energy') {
       // Estimate energy from CO2 (1 kg CO2 ≈ 0.5 kWh)
-      return metrics.monthlyData.map(item => ({
+      data = metrics.monthlyData.map(item => ({
         month: new Date(item.month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
         value: Math.round(item.co2 * 0.5 * 10) / 10,
         label: 'Energy Saved (kWh)'
       }));
     } else if (selectedMetric.value === 'impact') {
       // Calculate average impact score per month
-      return metrics.monthlyData.map(item => ({
+      data = metrics.monthlyData.map(item => ({
         month: new Date(item.month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
         value: Math.round((metrics.averageImpactScore || 50) * 10) / 10,
         label: 'Impact Score'
       }));
     } else if (selectedMetric.value === 'recyclability') {
       // Use recyclability rate
-      return metrics.monthlyData.map(item => ({
+      data = metrics.monthlyData.map(item => ({
         month: new Date(item.month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
         value: metrics.recyclabilityRate,
         label: 'Recyclability Rate (%)'
       }));
     }
-    return [];
+
+    // If we only have a single month of data, add a baseline month at 0
+    // so the chart visually flows from zero up to the current value.
+    if (data.length === 1 && metrics.monthlyData.length === 1) {
+      const onlyMonth = metrics.monthlyData[0].month; // format: YYYY-MM
+      const [yearStr, monthStr] = onlyMonth.split("-");
+      const year = Number(yearStr);
+      const month = Number(monthStr); // 1-12
+
+      if (!Number.isNaN(year) && !Number.isNaN(month)) {
+        const baselineDate = new Date(year, month - 2, 1); // previous month
+        const baselineLabel = baselineDate.toLocaleDateString("en-US", {
+          month: "short",
+          year: "numeric",
+        });
+
+        data = [
+          {
+            month: baselineLabel,
+            value: 0,
+            label: data[0].label,
+          },
+          data[0],
+        ];
+      }
+    }
+
+    return data;
   }, [selectedMetric, metrics]);
 
   // Get current value for selected metric
@@ -288,6 +317,7 @@ export default function ImpactMetricsDashboard({ analyses, city, cityTotalAnalys
                       style={{ fontSize: '11px' }}
                       tickLine={false}
                       axisLine={false}
+                      domain={[0, 'dataMax']}
                     />
                     <Tooltip
                       contentStyle={{

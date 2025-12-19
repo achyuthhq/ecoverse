@@ -30,14 +30,26 @@ interface UploadModalProps {
 }
 
 const modelOptions = {
-  'openai': 'GPT-4o',
-  'openai-gpt5': 'GPT-5',
-  'claude': 'Claude 4.5',
-  'mistral': 'Mistral Large 2.0',
-  'gemini': 'Gemini 2.5',
+  'nova-micro': 'Nova Micro',
+  'mistral': 'Mistral 7B',
+  'gemini': 'Gemini 2.5 Pro',
   'gemini-search': 'Gemini Search',
-  'grok': 'Grok 4',
-  'perplexity-fast': 'Perplexity',
+  'openai-fast': 'GPT-4o Mini',
+  'grok': 'Grok 3',
+  'openai': 'GPT-5',
+  'qwen-coder': 'Qwen Coder',
+  'perplexity-fast': 'Perplexity Sonar',
+  'chickytutor': 'ChickyTutor',
+  'claude-fast': 'Claude 4 Haiku',
+  'kimi-k2-thinking': 'Kimi K2 🧠',
+  'midijourney': 'Midijourney',
+  'claude': 'Claude 4.5 Sonnet',
+  'deepseek': 'DeepSeek R1 🧠',
+  'perplexity-reasoning': 'Perplexity Reasoning 🧠',
+  'claude-large': 'Claude 4.5 Opus',
+  'gemini-large': 'Gemini 2.5 Ultra 🧠',
+  'openai-large': 'GPT-5.2 (Max) 🧠',
+  'openai-audio': 'GPT-5 Audio 🎙️',
 };
 
 

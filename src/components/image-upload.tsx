@@ -9,7 +9,11 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button2";
 import { useSession } from "next-auth/react";
 
-export function ImageUpload() {
+interface ImageUploadProps {
+  hideBrowseButton?: boolean;
+}
+
+export function ImageUpload({ hideBrowseButton }: ImageUploadProps) {
   const { data: session, status } = useSession();
   const user = session?.user;
   const isLoading = status === "loading";
@@ -126,20 +130,13 @@ export function ImageUpload() {
       reader.readAsDataURL(file);
       const base64Image = await fileReadPromise;
       
-      // Get user from useCodeAuth hook
-      console.log("User from useCodeAuth:", user);
-      
       if (!user) {
-        console.error("No user found from useCodeAuth hook");
         throw new Error("User not found. Please log in again.");
       }
       
       if (!user.id) {
-        console.error("User ID is missing from user object:", user);
         throw new Error("User ID not found. Please log in again.");
       }
-      
-      console.log("Using user ID:", user.id);
 
       // Submit to analysis API
       const response = await fetch('/api/analyze', {
@@ -156,7 +153,6 @@ export function ImageUpload() {
       }
 
       const data = await response.json();
-      console.log('Analysis result:', data);
       
       setUploadProgress(100);
       
@@ -198,11 +194,6 @@ export function ImageUpload() {
           >
             {/* Glass effect overlay */}
             <div className="absolute inset-0 bg-white/5 backdrop-blur-sm rounded-xl"></div>
-            
-            {/* Decorative elements */}
-            <div className="absolute top-2 left-2 opacity-20">
-              <Camera className="h-4 w-4 text-purple-400" />
-            </div>
             
             {/* Content */}
             <div className="relative z-10 p-6 text-center">
@@ -246,7 +237,8 @@ export function ImageUpload() {
                   </p>
                 </div>
                 
-                {/* Upload button */}
+                {/* Upload button (optional) */}
+                {!hideBrowseButton && (
                 <div className="mt-4">
               <Button
                 onClick={() => fileInputRef.current?.click()}
@@ -264,6 +256,7 @@ export function ImageUpload() {
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
               </Button>
                 </div>
+                )}
                 
                 {/* File input */}
               <input
