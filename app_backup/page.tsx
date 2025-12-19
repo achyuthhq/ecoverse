@@ -39,7 +39,7 @@ export default async function Home() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <Link href="/auth/login">
                 <Button size="lg" className="px-8 py-6 text-lg bg-gradient-to-r from-teal-500 to-green-500 hover:from-teal-600 hover:to-green-600 rounded-full glass-card shadow-lg shadow-teal-500/20">
-                  Get Started
+                  Enter
                 </Button>
               </Link>
               <Link href="/about">
