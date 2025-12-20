@@ -14,6 +14,126 @@ const IMGBB_API_URL = "https://api.imgbb.com/1/upload";
 const POLLINATIONS_API_URL = "https://enter.pollinations.ai/api/generate/text/";
 const POLLINATIONS_API_KEY = process.env.POLLINATIONS_API_KEY || '';
 
+// Function to generate TTS text from analysis data
+// This function is called AFTER AI data is generated, so we need to fetch it from the database
+async function generateTTSText(ecoData: any, analysis: any): Promise<string> {
+  const parts: string[] = [];
+  
+  // Get the latest analysis data including AI-generated parameters
+  let latestAnalysis = analysis;
+  try {
+    latestAnalysis = await prisma.analysis.findUnique({
+      where: { id: analysis.id }
+    }) || analysis;
+  } catch (e) {
+    console.warn("[TTS] Could not fetch latest analysis, using provided analysis data:", e);
+    latestAnalysis = analysis;
+  }
+  
+  let aiData = null;
+  if (latestAnalysis?.extraNotes) {
+    try {
+      if (latestAnalysis.extraNotes.trim().startsWith('{')) {
+        const parsed = JSON.parse(latestAnalysis.extraNotes);
+        // Check if it has AI data (impactScore) and not just audioUrl
+        if (parsed.impactScore !== undefined) {
+          aiData = parsed;
+        }
+      }
+    } catch (e) {
+      // Not JSON, ignore
+    }
+  }
+  
+  // Item (direct, no prefixes)
+  parts.push(`${ecoData.item}.`);
+  
+  // Basic info (concise)
+  if (ecoData.material) parts.push(`Material: ${ecoData.material}.`);
+  if (ecoData.category) parts.push(`Category: ${ecoData.category}.`);
+  if (ecoData.degradability) parts.push(`Degradability: ${ecoData.degradability}.`);
+  
+  // AI-generated parameters (if available) - MUST include all stats
+  if (aiData) {
+    console.log("[TTS] AI data found, including all parameters:", Object.keys(aiData));
+    
+    // Impact Score (always include if available)
+    if (aiData.impactScore !== undefined && aiData.impactScore !== null) {
+      parts.push(`Environmental impact score: ${aiData.impactScore} out of 100.`);
+    }
+    
+    // CO2 Equivalent (always include if available)
+    if (aiData.co2Equivalent !== undefined && aiData.co2Equivalent !== null) {
+      parts.push(`CO2 equivalent: ${aiData.co2Equivalent} kilograms.`);
+    }
+    
+    // Water Usage (always include if available)
+    if (aiData.waterUsage !== undefined && aiData.waterUsage !== null) {
+      parts.push(`Water usage: ${aiData.waterUsage} liters.`);
+    }
+    
+    // Energy Consumption (always include if available)
+    if (aiData.energyConsumption !== undefined && aiData.energyConsumption !== null) {
+      parts.push(`Energy consumption: ${aiData.energyConsumption} kilowatt hours.`);
+    }
+    
+    // Decomposition Time (always include if available)
+    if (aiData.landfillYears !== undefined && aiData.landfillYears !== null) {
+      parts.push(`Decomposition time: ${aiData.landfillYears} years.`);
+    }
+    
+    // Recyclability (always include if available)
+    if (aiData.recyclability !== undefined && aiData.recyclability !== null) {
+      parts.push(`Recyclability: ${aiData.recyclability} percent.`);
+    }
+    
+    // Toxicity Level (always include if available)
+    if (aiData.toxicityLevel) {
+      parts.push(`Toxicity level: ${aiData.toxicityLevel}.`);
+    }
+    
+    // Microplastics Risk (always include if available)
+    if (aiData.microplasticsRisk !== undefined && aiData.microplasticsRisk !== null) {
+      parts.push(`Microplastics risk: ${aiData.microplasticsRisk ? 'Yes' : 'No'}.`);
+    }
+    
+    // Composition (always include if available)
+    if (aiData.composition && Array.isArray(aiData.composition) && aiData.composition.length > 0) {
+      const comp = aiData.composition.slice(0, 3).map((c: any) => `${c.material} ${c.percentage}%`).join(', ');
+      parts.push(`Material composition: ${comp}.`);
+    }
+  } else {
+    console.log("[TTS] No AI data found in extraNotes, stats will not be included");
+  }
+  
+  // Environmental impact (direct, no prefix)
+  if (ecoData.environmental_impact && Array.isArray(ecoData.environmental_impact) && ecoData.environmental_impact.length > 0) {
+    parts.push(ecoData.environmental_impact.slice(0, 2).join('. ') + '.');
+  }
+  
+  // Health risks (direct)
+  if (ecoData.harms && Array.isArray(ecoData.harms) && ecoData.harms.length > 0) {
+    parts.push(ecoData.harms.slice(0, 2).join('. ') + '.');
+  }
+  
+  // Disposal (direct)
+  if (ecoData.disposal && Array.isArray(ecoData.disposal) && ecoData.disposal.length > 0) {
+    parts.push(ecoData.disposal.slice(0, 3).join('. ') + '.');
+  }
+  
+  // Alternatives (direct)
+  if (ecoData.alternatives && Array.isArray(ecoData.alternatives) && ecoData.alternatives.length > 0) {
+    parts.push(ecoData.alternatives.slice(0, 2).join('. ') + '.');
+  }
+  
+  // Reuse potential (direct)
+  if (analysis.potentialForReuse) {
+    parts.push(analysis.potentialForReuse + '.');
+  }
+  
+  return parts.join(' ');
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Get user session from NextAuth
@@ -26,7 +146,9 @@ export async function POST(request: NextRequest) {
     const userId = session.user.id;
 
     const body = await request.json();
-    const { image, model } = body;
+    const { image, model, enableReadOut, voice } = body;
+    
+    console.log("[ANALYSIS_GEN] Request body - enableReadOut:", enableReadOut, "voice:", voice);
 
     if (!image) {
       return NextResponse.json({ error: "Image data is required" }, { status: 400 });
@@ -193,7 +315,7 @@ export async function POST(request: NextRequest) {
             userId: userId,
             imageUrl: validImageUrl,
             label: ecoData.item,
-            extraNotes: ecoData.caption,
+            extraNotes: ecoData.caption, // Store caption initially (will be replaced with AI data later)
             type: ecoData.material,
             category: ecoData.category,
             degradability: ecoData.degradability,
@@ -207,9 +329,93 @@ export async function POST(request: NextRequest) {
         });
         
         console.log("[ANALYSIS_GEN] Analysis created successfully with ID:", analysis.id);
+        
+        // Generate TTS if enabled
+        let audioUrl = null;
+        if (enableReadOut) {
+          try {
+            console.log("[ANALYSIS_GEN] TTS enabled - Generating audio with voice:", voice || 'nova');
+            
+            // Generate summary text for TTS (excludes AI chat part, only includes main analysis)
+            const ttsText = await generateTTSText(ecoData, analysis);
+            console.log("[ANALYSIS_GEN] TTS text generated, length:", ttsText.length);
+            console.log("[ANALYSIS_GEN] TTS text preview:", ttsText.substring(0, 100));
+            
+            // Call TTS API directly using internal server call
+            const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+            const ttsUrl = `${baseUrl}/api/generate-tts`;
+            console.log("[ANALYSIS_GEN] Calling TTS API:", ttsUrl);
+            
+            const ttsResponse = await fetch(ttsUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Cookie': request.headers.get('cookie') || '', // Pass session cookie for auth
+              },
+              body: JSON.stringify({
+                text: ttsText,
+                voice: voice || 'nova'
+              }),
+            });
+            
+            console.log("[ANALYSIS_GEN] TTS API response status:", ttsResponse.status);
+            
+            if (ttsResponse.ok) {
+              const ttsData = await ttsResponse.json();
+              audioUrl = ttsData.audioUrl;
+              console.log("[ANALYSIS_GEN] TTS audio URL received, length:", audioUrl?.length || 0);
+              
+              // Update analysis with audio URL in extraNotes
+              // IMPORTANT: Only add audioUrl/voice, don't overwrite existing AI data
+              try {
+                let existingData = {};
+                // Check if extraNotes is JSON (contains AI data) or string (caption)
+                if (analysis.extraNotes && typeof analysis.extraNotes === 'string') {
+                  if (analysis.extraNotes.trim().startsWith('{')) {
+                    // It's JSON, parse it to preserve AI data
+                    try {
+                      existingData = JSON.parse(analysis.extraNotes);
+                    } catch (e) {
+                      console.warn("[ANALYSIS_GEN] Could not parse extraNotes, starting fresh");
+                    }
+                  }
+                  // If it's a string (caption), we'll just add audioUrl/voice
+                  // The AI data will be saved later via PATCH endpoint
+                }
+                
+                // Merge audio data with existing data (preserve AI data if it exists)
+                const mergedData = {
+                  ...existingData,
+                  audioUrl,
+                  voice: voice || 'nova'
+                };
+                
+                await prisma.analysis.update({
+                  where: { id: analysis.id },
+                  data: { 
+                    extraNotes: JSON.stringify(mergedData)
+                  }
+                });
+                
+                console.log("[ANALYSIS_GEN] TTS audio generated and saved successfully to database");
+              } catch (updateError) {
+                console.error("[ANALYSIS_GEN] Error updating analysis with audio URL:", updateError);
+              }
+            } else {
+              const errorText = await ttsResponse.text();
+              console.warn("[ANALYSIS_GEN] TTS generation failed, status:", ttsResponse.status, "error:", errorText);
+            }
+          } catch (ttsError) {
+            console.error("[ANALYSIS_GEN] Error generating TTS:", ttsError);
+            // Continue without audio if TTS fails
+          }
+        } else {
+          console.log("[ANALYSIS_GEN] TTS not enabled, skipping audio generation");
+        }
+        
         console.log("[ANALYSIS_GEN] Analysis generation completed");
         
-        return NextResponse.json({ success: true, id: analysis.id });
+        return NextResponse.json({ success: true, id: analysis.id, audioUrl });
       } catch (dbError) {
         console.error("[ANALYSIS_GEN] Database error:", dbError);
         return NextResponse.json(

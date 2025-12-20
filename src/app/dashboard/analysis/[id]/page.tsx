@@ -21,7 +21,10 @@ import {
   Search,
   Zap,
   Brain,
-  CheckCircle2
+  CheckCircle2,
+  Play,
+  Pause,
+  Volume2
 } from "lucide-react";
 
 import DashboardShell from "@/components/dashboard-shell";
@@ -99,6 +102,9 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
   const hasFetchedRef = useRef(false);
   const isGeneratingRef = useRef(false);
   const [cityMetrics, setCityMetrics] = useState<{ city: string | null; totalAnalyses: number } | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (session?.user && params.id && !hasFetchedRef.current) {
@@ -131,9 +137,8 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
     console.log("[ANALYSIS] Starting analysis fetch");
     console.log("[ANALYSIS] Analysis ID:", params.id);
     try {
-      // Step 1: Loading analysis data
-      setLoadingSteps({ current: 1, total: 4, message: "Uploading..." });
-      console.log("[ANALYSIS] Step 1: Requesting analysis data from /api/analyses/" + params.id);
+      // Fetch analysis data first (no loading steps yet)
+      console.log("[ANALYSIS] Requesting analysis data from /api/analyses/" + params.id);
       
       const response = await fetch(`/api/analyses/${params.id}`);
       console.log("[ANALYSIS] Analysis data response status:", response.status);
@@ -144,6 +149,7 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
         } else {
           setError("Failed to load analysis");
         }
+        setLoading(false);
         return;
       }
 
@@ -151,27 +157,39 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
       console.log("[ANALYSIS] Analysis data received:", { id: data.id, label: data.label });
       setAnalysis(data);
       
-      // Step 2: Item detected
-      setLoadingSteps({ current: 2, total: 4, message: "Recognizing..." });
-      console.log("[ANALYSIS] Step 2: Item detected -", data.label || 'Unknown item');
-      await new Promise(resolve => setTimeout(resolve, 800)); // Small delay
-      
-      // Check if AI data already exists in extraNotes
+      // Extract data from extraNotes if available
       let existingAiData = null;
-      try {
-        if (data.extraNotes) {
-          console.log("[ANALYSIS] Checking for existing AI data in extraNotes...");
-          // Check if extraNotes is JSON (starts with {)
+      let audioUrlFromNotes = null;
+      
+      if (data.extraNotes) {
+        try {
           if (data.extraNotes.trim().startsWith('{')) {
-            existingAiData = JSON.parse(data.extraNotes);
-            // Validate that it's actually AI data (has impactScore)
-            if (existingAiData && typeof existingAiData === 'object' && existingAiData.impactScore !== undefined) {
+            const extraNotesData = JSON.parse(data.extraNotes);
+            console.log("[ANALYSIS] Parsed extraNotes, keys:", Object.keys(extraNotesData));
+            
+            // Extract audio URL if present
+            if (extraNotesData.audioUrl) {
+              audioUrlFromNotes = extraNotesData.audioUrl;
+              setAudioUrl(audioUrlFromNotes);
+              console.log("[ANALYSIS] Audio URL found in extraNotes:", audioUrlFromNotes.substring(0, 50) + "...");
+            } else {
+              console.log("[ANALYSIS] No audioUrl found in extraNotes, keys:", Object.keys(extraNotesData));
+            }
+            
+            // Check if it contains AI data (has impactScore)
+            if (extraNotesData.impactScore !== undefined) {
+              existingAiData = extraNotesData;
               console.log("[ANALYSIS] Existing AI data found in extraNotes, using cached data");
               console.log("[ANALYSIS] AI data has impactScore:", existingAiData.impactScore);
+              console.log("[ANALYSIS] AI data keys:", Object.keys(existingAiData));
               setAiData(existingAiData);
-              // Step 4: Complete (skip AI generation)
-              setLoadingSteps({ current: 4, total: 4, message: "Analysis complete!" });
-              await new Promise(resolve => setTimeout(resolve, 500));
+              // Make sure audioUrl is set if it exists in the data
+              if (extraNotesData.audioUrl && !audioUrlFromNotes) {
+                setAudioUrl(extraNotesData.audioUrl);
+                console.log("[ANALYSIS] Audio URL found in AI data");
+              }
+              // Data already exists, skip loading animation - set loading to false IMMEDIATELY
+              setLoading(false);
               return; // Exit early, data already exists
             } else {
               console.log("[ANALYSIS] extraNotes contains JSON but not valid AI data (no impactScore)");
@@ -179,26 +197,37 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
           } else {
             console.log("[ANALYSIS] extraNotes contains non-JSON data (likely original caption), will generate AI data");
           }
-        } else {
-          console.log("[ANALYSIS] No extraNotes found, will generate AI data");
+        } catch (e) {
+          console.error("[ANALYSIS] Error parsing existing data from extraNotes:", e);
+          console.log("[ANALYSIS] Will generate new AI data due to parse error");
         }
-      } catch (e) {
-        console.error("[ANALYSIS] Error parsing existing AI data:", e);
-        console.log("[ANALYSIS] Will generate new AI data due to parse error");
+      } else {
+        console.log("[ANALYSIS] No extraNotes found, will generate AI data");
       }
       
-      // Step 3: Processing with AI (only if no existing data)
+      // Only show loading animation if we need to generate new AI data
       if (!existingAiData) {
         console.log("[ANALYSIS] No existing AI data found, generating new AI-enhanced data");
+        
+        // Step 1: Loading analysis data
+        setLoadingSteps({ current: 1, total: 4, message: "Uploading..." });
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        // Step 2: Item detected
+        setLoadingSteps({ current: 2, total: 4, message: "Recognizing..." });
+        console.log("[ANALYSIS] Step 2: Item detected -", data.label || 'Unknown item');
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Step 3: Processing with AI
         setLoadingSteps({ current: 3, total: 4, message: "Thinking..." });
         // Generate AI-enhanced data
         await generateAIEnhancedData(data);
+        
+        // Step 4: Complete
+        setLoadingSteps({ current: 4, total: 4, message: "Analysis complete!" });
+        console.log("[ANALYSIS] Analysis fetch completed successfully");
+        await new Promise(resolve => setTimeout(resolve, 300)); // Small delay before showing results
       }
-      
-      // Step 4: Complete
-      setLoadingSteps({ current: 4, total: 4, message: "Analysis complete!" });
-      console.log("[ANALYSIS] Analysis fetch completed successfully");
-      await new Promise(resolve => setTimeout(resolve, 500)); // Small delay before showing results
       
     } catch (err) {
       console.error("Error fetching analysis:", err);
@@ -332,6 +361,25 @@ IMPORTANT:
           
           if (saveResponse.ok) {
             console.log("[REGENERATE] AI data saved to database successfully");
+            
+            // After saving AI data, generate TTS if it doesn't exist yet
+            const updatedResponse = await fetch(`/api/analyses/${analysisData.id}`);
+            if (updatedResponse.ok) {
+              const updatedData = await updatedResponse.json();
+              if (updatedData.extraNotes) {
+                try {
+                  if (updatedData.extraNotes.trim().startsWith('{')) {
+                    const parsed = JSON.parse(updatedData.extraNotes);
+                    if (parsed.audioUrl && !audioUrl) {
+                      setAudioUrl(parsed.audioUrl);
+                      console.log("[REGENERATE] Audio URL found after saving AI data");
+                    }
+                  }
+                } catch (e) {
+                  // Ignore parse errors
+                }
+              }
+            }
           } else {
             console.error("[REGENERATE] Failed to save AI data to database, status:", saveResponse.status);
           }
@@ -350,7 +398,19 @@ IMPORTANT:
     }
   };
 
-  if (status === "loading" || loading) {
+  // Only show loading if session is loaded AND we're actually loading analysis
+  // Don't show loading just because session is checking
+  if (status === "loading") {
+    // Show minimal loading while session loads
+    return (
+      <div className="fixed inset-0 w-screen h-screen z-50 bg-[#0c0c0c] flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
+
+  // Show full loading animation only when actually fetching/generating analysis
+  if (loading && session?.user) {
     return (
       <div className="fixed inset-0 w-screen h-screen z-50">
         <ShaderAnimation />
@@ -361,10 +421,17 @@ IMPORTANT:
             transition={{ duration: 0.5 }}
             className="text-center px-4"
           >
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">AI Analysis in Progress</h2>
-            <p className="text-lg sm:text-xl md:text-2xl font-semibold text-emerald-300/90 tracking-wide">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-8">AI Analysis in Progress</h2>
+            <motion.p
+              key={loadingSteps.message}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="text-lg sm:text-xl md:text-2xl font-semibold text-emerald-300/90 tracking-wide"
+            >
               {loadingSteps.message}
-            </p>
+            </motion.p>
           </motion.div>
         </div>
       </div>
@@ -398,14 +465,11 @@ IMPORTANT:
     );
   }
 
-  // Use AI-generated data or fallback to calculated data
-  const impactScore = aiData ? {
+  // Use AI-generated data only if it exists
+  const impactScore = aiData && aiData.impactScore !== undefined ? {
     score: aiData.impactScore,
-    category: aiData.category
-  } : {
-    score: Math.floor(Math.random() * 100),
-    category: "moderate"
-  };
+    category: aiData.category || "moderate"
+  } : null;
 
   // Let AI generate these values dynamically
   const co2Equivalent = aiData?.co2Equivalent;
@@ -589,6 +653,43 @@ IMPORTANT:
       {/* City onboarding popup on analysis page as well */}
       <CityOnboardingModal />
 
+      {/* Audio Control Button - Top Right Corner */}
+      {audioUrl && (
+        <div className="fixed top-4 right-4 z-[100] pointer-events-auto">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full h-10 w-10 glass-card border-white/20 hover:bg-white/10 bg-black/50 backdrop-blur-sm"
+                  onClick={() => {
+                    if (audioRef.current) {
+                      if (isPlayingAudio) {
+                        audioRef.current.pause();
+                        setIsPlayingAudio(false);
+                      } else {
+                        audioRef.current.play();
+                        setIsPlayingAudio(true);
+                      }
+                    }
+                  }}
+                >
+                  {isPlayingAudio ? (
+                    <Pause className="h-5 w-5 text-emerald-400" />
+                  ) : (
+                    <Volume2 className="h-5 w-5 text-emerald-400" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isPlayingAudio ? 'Pause Audio' : 'Play Audio Analysis'}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      )}
+
       <div className="flex flex-col gap-6 pt-6 sm:pt-8 md:pt-4">
         {/* Header with back button */}
         <div className="flex items-center justify-between">
@@ -727,10 +828,12 @@ IMPORTANT:
                   <h2 className="text-xl font-semibold text-white">Environmental Impact</h2>
                 </div>
                 
-                <div className={`grid grid-cols-1 gap-4 ${co2Equivalent || waterUsage ? 'md:grid-cols-2 lg:grid-cols-3' : 'md:grid-cols-1'}`}>
-                  <div className="glass-card rounded-lg p-4 border border-white/10">
-                    <div className="text-sm text-gray-300 mb-1">Environmental Impact Score</div>
-                    <div className="text-3xl font-semibold text-white">{impactScore.score}/100</div>
+                <div className={`grid grid-cols-1 gap-4 ${co2Equivalent || waterUsage || impactScore ? 'md:grid-cols-2 lg:grid-cols-3' : 'md:grid-cols-1'}`}>
+                  {/* Impact Score Card - Only show if AI data exists */}
+                  {impactScore && (
+                    <div className="glass-card rounded-lg p-4 border border-white/10">
+                      <div className="text-sm text-gray-300 mb-1">Environmental Impact Score</div>
+                      <div className="text-3xl font-semibold text-white">{impactScore.score}/100</div>
                     <Badge 
                       className={`mt-2 glass-card border ${
                         impactScore.category === "excellent" ? "text-emerald-300 border-emerald-500/30" :
@@ -746,8 +849,9 @@ IMPORTANT:
                        impactScore.category === "good" ? "✅ Good environmental practices" :
                        impactScore.category === "moderate" ? "⚠️ Moderate environmental impact" :
                        "❌ High environmental impact"}
+                      </div>
                     </div>
-                  </div>
+                  )}
                   
                   {co2Equivalent && (
                     <div className="glass-card rounded-lg p-4 border border-white/10">
@@ -991,6 +1095,18 @@ IMPORTANT:
         analysisId={analysis.id}
         analysisLabel={analysis.label}
       />
+      
+      {/* Hidden Audio Element */}
+      {audioUrl && (
+        <audio
+          ref={audioRef}
+          src={audioUrl}
+          onEnded={() => setIsPlayingAudio(false)}
+          onPause={() => setIsPlayingAudio(false)}
+          onPlay={() => setIsPlayingAudio(true)}
+          className="hidden"
+        />
+      )}
     </DashboardShell>
   );
 } 

@@ -61,9 +61,20 @@ export default function UploadModal({ isOpen, onClose }: UploadModalProps) {
   const [showCropper, setShowCropper] = useState(false);
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<string>('openai');
+  const [enableReadOut, setEnableReadOut] = useState(false);
+  const [selectedVoice, setSelectedVoice] = useState<string>('nova');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  const voiceOptions = [
+    { value: 'nova', label: 'Nova' },
+    { value: 'shimmer', label: 'Shimmer' },
+    { value: 'alloy', label: 'Alloy' },
+    { value: 'echo', label: 'Echo' },
+    { value: 'fable', label: 'Fable' },
+    { value: 'onyx', label: 'Onyx' },
+  ];
 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -225,14 +236,19 @@ export default function UploadModal({ isOpen, onClose }: UploadModalProps) {
       const apiModel = selectedModel === 'openai-gpt5' ? 'openai' : selectedModel;
       console.log("[UPLOAD] Mapped model:", selectedModel, "-> API model:", apiModel);
       
-      // Submit to analysis API with selected model
+      // Submit to analysis API with selected model and TTS options
       console.log("[UPLOAD] Requesting /api/analyze with model:", apiModel);
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ image: base64Image, model: apiModel }),
+        body: JSON.stringify({ 
+          image: base64Image, 
+          model: apiModel,
+          enableReadOut: enableReadOut,
+          voice: enableReadOut ? selectedVoice : undefined
+        }),
       });
 
       console.log("[UPLOAD] API response status:", response.status);
@@ -247,12 +263,16 @@ export default function UploadModal({ isOpen, onClose }: UploadModalProps) {
       console.log('[UPLOAD] Analysis ID:', data.id);
       
       setUploadProgress(100);
+      clearInterval(interval);
       
       // Close modal first
       onClose();
       
-      // Redirect to analysis page after successful upload
+      // Clear upload state and wait a bit to ensure modal is closed
       setTimeout(() => {
+        setIsUploading(false);
+        
+        // Redirect to analysis page after successful upload
         if (data && data.id) {
           console.log("[UPLOAD] Redirecting to analysis page:", `/dashboard/analysis/${data.id}`);
           router.push(`/dashboard/analysis/${data.id}`);
@@ -260,14 +280,14 @@ export default function UploadModal({ isOpen, onClose }: UploadModalProps) {
           console.error("[UPLOAD] No analysis ID returned from server");
           throw new Error('No analysis ID returned from server');
         }
-      }, 300);
+      }, 100);
       
     } catch (err) {
       console.error("[UPLOAD] Upload error:", err);
       setError(`Failed to upload image: ${err instanceof Error ? err.message : "Unknown error"}`);
       setIsUploading(false);
-    } finally {
       clearInterval(interval);
+    } finally {
       console.log("[UPLOAD] Upload process completed");
     }
   };
@@ -302,12 +322,19 @@ export default function UploadModal({ isOpen, onClose }: UploadModalProps) {
               transition={{ duration: 0.5 }}
               className="text-center px-4"
             >
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">AI Analysis in Progress</h2>
-              <p className="text-lg sm:text-xl md:text-2xl font-semibold text-emerald-300/90 tracking-wide">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-8">AI Analysis in Progress</h2>
+              <motion.p
+                key={uploadProgress < 30 ? "Uploading..." : uploadProgress < 60 ? "Recognizing..." : uploadProgress < 95 ? "Thinking..." : "Generating..."}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+                className="text-lg sm:text-xl md:text-2xl font-semibold text-emerald-300/90 tracking-wide"
+              >
                 {uploadProgress < 30 ? "Uploading..." : 
                  uploadProgress < 60 ? "Recognizing..." : 
                  uploadProgress < 95 ? "Thinking..." : "Generating..."}
-              </p>
+              </motion.p>
             </motion.div>
           </div>
         </div>,
@@ -524,6 +551,64 @@ export default function UploadModal({ isOpen, onClose }: UploadModalProps) {
                               ))}
                             </DropdownMenuContent>
                           </DropdownMenu>
+                        </div>
+
+                        {/* Read Out Option */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id="readOut"
+                              checked={enableReadOut}
+                              onChange={(e) => setEnableReadOut(e.target.checked)}
+                              className="w-4 h-4 rounded border-white/20 bg-white/5 text-emerald-400 focus:ring-emerald-400 focus:ring-2"
+                            />
+                            <label htmlFor="readOut" className="text-xs font-medium text-white/90 font-montserrat cursor-pointer">
+                              Read Out Analysis
+                            </label>
+                          </div>
+                          {enableReadOut && (
+                            <div className="ml-6 space-y-2">
+                              <label className="text-xs font-medium text-white/70 font-montserrat">
+                                Voice
+                              </label>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className={cn(
+                                      "flex h-8 w-full items-center justify-between gap-2 px-3 rounded-lg text-xs font-medium transition-colors hover:bg-white/10 focus-visible:outline-none border glass-card font-montserrat text-white border-white/20"
+                                    )}
+                                  >
+                                    <span>{voiceOptions.find(v => v.value === selectedVoice)?.label || 'Nova'}</span>
+                                    <ChevronDown className="h-3 w-3 opacity-70" />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent 
+                                  align="start" 
+                                  className="glass-card border border-white/10 min-w-[150px] p-1"
+                                >
+                                  {voiceOptions.map((voice) => (
+                                    <DropdownMenuItem
+                                      key={voice.value}
+                                      onClick={() => setSelectedVoice(voice.value)}
+                                      className={cn(
+                                        "cursor-pointer text-white hover:bg-white/10 focus:bg-white/10 rounded-md px-3 py-2 text-xs font-montserrat",
+                                        selectedVoice === voice.value && "bg-white/10"
+                                      )}
+                                    >
+                                      <div className="flex items-center justify-between w-full gap-2">
+                                        <span>{voice.label}</span>
+                                        {selectedVoice === voice.value && (
+                                          <span className="text-white/60 text-[10px]">✓</span>
+                                        )}
+                                      </div>
+                                    </DropdownMenuItem>
+                                  ))}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          )}
                         </div>
 
                         <div className="flex gap-2 sticky bottom-0 glass-card backdrop-blur-sm p-2 -mx-2 rounded-lg">

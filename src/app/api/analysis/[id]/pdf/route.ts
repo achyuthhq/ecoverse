@@ -63,6 +63,8 @@ export async function GET(
       color: #ffffff;
       padding: 40px;
       line-height: 1.6;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
     .container {
       max-width: 800px;
@@ -71,6 +73,8 @@ export async function GET(
       border-radius: 16px;
       padding: 40px;
       border: 1px solid rgba(255, 255, 255, 0.1);
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
     .header {
       text-align: center;
@@ -123,6 +127,9 @@ export async function GET(
       font-size: 16px;
       font-weight: 600;
       color: #ffffff;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      max-width: 100%;
     }
     .section {
       margin-bottom: 30px;
@@ -140,6 +147,9 @@ export async function GET(
       padding-left: 20px;
       position: relative;
       color: #d1d5db;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      max-width: 100%;
     }
     .list-item::before {
       content: "•";
@@ -169,6 +179,9 @@ export async function GET(
     .recommendation-item p {
       font-size: 14px;
       color: #d1d5db;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      max-width: 100%;
     }
     .footer {
       margin-top: 40px;
@@ -236,9 +249,11 @@ export async function GET(
       <p>Ecoverse - ${new Date().toLocaleDateString()}</p>
     </div>
 
+    ${analysis.imageUrl ? `
     <div class="image-section">
-      <img src="${analysis.imageUrl}" alt="${analysis.label}" />
+      <img src="${analysis.imageUrl}" alt="${analysis.label}" style="max-width: 100%; height: auto; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); word-wrap: break-word; overflow-wrap: break-word;" />
     </div>
+    ` : ''}
 
     <div class="info-grid">
       <div class="info-item">
@@ -316,7 +331,7 @@ export async function GET(
     ${analysis.potentialForReuse ? `
     <div class="section">
       <h2 class="section-title">Reuse Potential</h2>
-      <p style="color: #d1d5db; font-size: 14px;">${analysis.potentialForReuse}</p>
+      <p style="color: #d1d5db; font-size: 14px; word-wrap: break-word; overflow-wrap: break-word; max-width: 100%;">${analysis.potentialForReuse}</p>
     </div>
     ` : ''}
 

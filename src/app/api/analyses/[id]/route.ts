@@ -66,12 +66,32 @@ export async function PATCH(
     }
 
     // Save AI data as JSON in extraNotes
-    // Preserve the original caption if it exists and is not JSON
-    let updatedExtraNotes = JSON.stringify(aiData);
-    if (analysis.extraNotes && !analysis.extraNotes.startsWith('{')) {
-      // If extraNotes contains the original caption (not JSON), preserve it
-      updatedExtraNotes = JSON.stringify(aiData);
+    // Preserve existing data (audioUrl, voice) if it exists
+    let existingData: any = {};
+    if (analysis.extraNotes) {
+      if (analysis.extraNotes.trim().startsWith('{')) {
+        // If extraNotes is already JSON, parse it to preserve audioUrl and voice
+        try {
+          existingData = JSON.parse(analysis.extraNotes);
+          console.log("[ANALYSIS_UPDATE] Existing data keys:", Object.keys(existingData));
+        } catch (e) {
+          console.warn("[ANALYSIS_UPDATE] Could not parse existing extraNotes, starting fresh");
+        }
+      }
     }
+    
+    // Merge AI data with existing data (preserve audioUrl and voice if they exist)
+    const mergedData = {
+      ...aiData, // AI data takes priority
+      ...(existingData.audioUrl && { audioUrl: existingData.audioUrl }),
+      ...(existingData.voice && { voice: existingData.voice })
+    };
+    
+    console.log("[ANALYSIS_UPDATE] Merged data keys:", Object.keys(mergedData));
+    console.log("[ANALYSIS_UPDATE] Has impactScore:", mergedData.impactScore !== undefined);
+    console.log("[ANALYSIS_UPDATE] Has audioUrl:", !!mergedData.audioUrl);
+    
+    const updatedExtraNotes = JSON.stringify(mergedData);
 
     console.log("[ANALYSIS_UPDATE] Saving AI data to database for analysis:", params.id);
     await prisma.analysis.update({

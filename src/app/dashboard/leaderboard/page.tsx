@@ -250,70 +250,70 @@ export default function LeaderboardPage() {
                                 height={32}
                                 className="object-contain"
                               />
-                            </div>
-                          ) : index === 1 ? (
-                            <div className="mx-auto bg-gradient-to-r from-gray-300 to-gray-400 rounded-full w-8 h-8 flex items-center justify-center shadow-md">
-                              <Medal className="h-4 w-4 text-white" />
-                            </div>
-                          ) : index === 2 ? (
-                            <div className="mx-auto bg-gradient-to-r from-orange-600 to-orange-700 rounded-full w-8 h-8 flex items-center justify-center shadow-md">
-                              <Medal className="h-4 w-4 text-white" />
-                            </div>
-                          ) : (
-                            <span className="text-lg font-semibold text-gray-300">{index + 1}</span>
-                          )}
                         </div>
-                        
-                        {/* User avatar */}
-                        <div className="flex-shrink-0 ml-3 relative">
-                          <ProfilePicture
-                            src={user.image}
-                            alt={user.name || "User"}
-                            size="md"
-                            shape={(user as any).profileShape || "circle"}
-                            className={`${
-                              index === 0 ? "border-yellow-400" : 
-                              index === 1 ? "border-gray-300" : 
-                              index === 2 ? "border-orange-600" : "border-white"
-                            }`}
-                          />
+                      ) : index === 1 ? (
+                        <div className="mx-auto bg-gradient-to-r from-gray-300 to-gray-400 rounded-full w-8 h-8 flex items-center justify-center shadow-md">
+                          <Medal className="h-4 w-4 text-white" />
+                        </div>
+                      ) : index === 2 ? (
+                        <div className="mx-auto bg-gradient-to-r from-orange-600 to-orange-700 rounded-full w-8 h-8 flex items-center justify-center shadow-md">
+                          <Medal className="h-4 w-4 text-white" />
+                        </div>
+                      ) : (
+                        <span className="text-lg font-semibold text-gray-300">{index + 1}</span>
+                      )}
+                    </div>
+                    
+                    {/* User avatar */}
+                    <div className="flex-shrink-0 ml-3 relative">
+                      <ProfilePicture
+                        src={user.image}
+                        alt={user.name || "User"}
+                        size="md"
+                        shape={(user as any).profileShape || "circle"}
+                        className={`${
+                          index === 0 ? "border-yellow-400" : 
+                          index === 1 ? "border-gray-300" : 
+                          index === 2 ? "border-orange-600" : "border-white"
+                        }`}
+                      />
                           {index < 3 && index !== 0 && (
-                            <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
-                              <Award className={`h-4 w-4 ${
+                        <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
+                          <Award className={`h-4 w-4 ${
                                 index === 1 ? "text-gray-400" : "text-orange-600"
-                              }`} />
-                            </div>
-                          )}
+                          }`} />
                         </div>
-                        
-                        {/* User info */}
-                        <div className="ml-4 flex-1">
-                          <h3 className="font-semibold text-white">{user.name || "Anonymous User"}</h3>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Zap className="h-3 w-3 text-blue-400" />
-                            <p className="text-sm text-gray-300">{user.analysisCount} analyses</p>
-                          </div>
-                        </div>
-                        
-                        {/* Eco awareness score badge */}
-                        <div className="flex-shrink-0">
-                          <div className={`px-4 py-2 rounded-xl text-sm font-semibold ${
-                            index === 0 ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" : 
-                            index === 1 ? "bg-white/10 text-gray-300 border border-white/20" : 
-                            index === 2 ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : 
-                            "bg-green-500/20 text-green-400 border border-green-500/30"
-                          }`}>
-                            {user.ecoAwarenessScore} pts
-                          </div>
-                        </div>
+                      )}
+                    </div>
+                    
+                    {/* User info */}
+                    <div className="ml-4 flex-1">
+                      <h3 className="font-semibold text-white">{user.name || "Anonymous User"}</h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Zap className="h-3 w-3 text-blue-400" />
+                        <p className="text-sm text-gray-300">{user.analysisCount} analyses</p>
                       </div>
                     </div>
-                  ))}
-                  
-                  {cityUsers.length === 0 && !isLoadingUsers && (
-                    <div className="text-center py-8">
-                      <p className="text-gray-500">No users found in this city.</p>
+                    
+                    {/* Eco awareness score badge */}
+                    <div className="flex-shrink-0">
+                      <div className={`px-4 py-2 rounded-xl text-sm font-semibold ${
+                        index === 0 ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" : 
+                        index === 1 ? "bg-white/10 text-gray-300 border border-white/20" : 
+                        index === 2 ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : 
+                        "bg-green-500/20 text-green-400 border border-green-500/30"
+                      }`}>
+                        {user.ecoAwarenessScore} pts
+                      </div>
                     </div>
+                  </div>
+                </div>
+              ))}
+              
+                  {cityUsers.length === 0 && !isLoadingUsers && (
+                <div className="text-center py-8">
+                      <p className="text-gray-500">No users found in this city.</p>
+                </div>
                   )}
                 </>
               )}
