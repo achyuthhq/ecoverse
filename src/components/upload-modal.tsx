@@ -32,7 +32,7 @@ interface UploadModalProps {
 }
 
 const modelOptions = {
-  'openai': 'GPT-5 5.2 Max',
+  'openai': 'GPT-5.2 (Max)',
   'openai-large': 'GPT-5',
   'claude': 'Claude 4.5 Sonnet',
   'claude-large': 'Claude 4.5 Opus',

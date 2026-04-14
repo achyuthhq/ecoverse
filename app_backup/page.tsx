@@ -44,7 +44,7 @@ export default async function Home() {
               </Link>
               <Link href="/about">
                 <Button size="lg" variant="outline" className="px-8 py-6 text-lg rounded-full glass-card bg-opacity-10">
-                  Learn More
+                  Discover
                 </Button>
               </Link>
             </div>
